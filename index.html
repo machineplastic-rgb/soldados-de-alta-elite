@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>SOLDADOS DE ALTA ELITE · demo técnica</title>
+<style>
+html,body{margin:0;height:100%;background:#111;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;font-family:Arial,sans-serif}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.b{position:fixed;width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.5);color:#fff;font:bold 18px Arial;display:flex;align-items:center;justify-content:center;touch-action:none;display:none}
+.b.on{background:rgba(255,255,255,.45)}
+body.touch .b{display:flex}
+#mute{position:fixed;top:8px;right:8px;width:44px;height:36px;background:#0008;color:#fff;border:1px solid #fff6;border-radius:6px;font-size:18px;z-index:5}
+#rot{position:fixed;inset:0;background:#111;color:#fff;display:none;align-items:center;justify-content:center;text-align:center;font:20px Arial;z-index:9}
+</style></head><body>
+<canvas id="c"></canvas>
+<button id="mute">🔊</button>
+<div id="rot">Gira el móvil en horizontal ↻</div>
+<div class="b" id="bL" style="left:14px;bottom:18px">◀</div>
+<div class="b" id="bR" style="left:98px;bottom:18px">▶</div>
+<div class="b" id="bD" style="left:56px;bottom:98px;width:60px;height:60px">▼</div>
+<div class="b" id="bU" style="left:56px;bottom:166px;width:60px;height:60px">▲</div>
+<div class="b" id="bJ" style="right:14px;bottom:18px;background:rgba(80,160,255,.3)">SALTO</div>
+<div class="b" id="bF" style="right:98px;bottom:18px;background:rgba(255,80,60,.3)">FUEGO</div>
+<div class="b" id="bT" style="right:56px;bottom:98px;width:60px;height:60px;background:rgba(255,220,60,.3)">⚡</div>
+<script src="spr.js"></script>
+<script>
+const VERSION='demo técnica v10 · primer plano';
+// ---------- sprites ----------
+const NAMES=Object.keys(SPR),IMG={};let loaded=0;
+NAMES.forEach(n=>{const i=new Image();i.onload=()=>{loaded++};i.src='img/spr/'+n+'.webp';IMG[n]=i});
+const PS=1.4;                            // escala del soldado respecto al tamaño base
+const SC=56/338*PS;                      // de pie = 78 px
+// animaciones: [fotogramas], fps, bucle
+const AN={
+ idle:[['e2_0','e2_1'],1.6,1], run:[['r1_0','r1_1','r1_2','r1_3','r1_4','r1_5','r1_6','r1_7'],13,1],
+ crouch:[['a1_5'],1,1], caim1:[['a1_6'],1,1], aim0:[['a1_0'],1,1], aim1:[['a1_1'],1,1], aim2:[['a1_2'],1,1], aim3:[['a1_3'],1,1], aim4:[['a1_4'],1,1], crouchin:[['j1_0'],1,1], flash:[['e2_2'],1,1], flash2:[['e2_3'],1,1],
+ jump0:[['j1_1'],1,1], rise:[['j1_2'],1,1], rise2:[['j1_3'],1,1], apex:[['j1_4'],1,1], fall0:[['j1_5'],1,1], fall:[['j1_6'],1,1], land:[['j1_7'],1,1], pre:[['j1_0'],1,1],
+ dash0:[['d1_1'],1,1], dash:[['d1_2','d1_3','d1_4','d1_5'],20,1], brake:[['d1_6'],1,1], recov:[['d1_7'],1,1], hurt:[['e2_4'],1,1], fly:[['e2_5'],1,1], dead:[['e2_6'],1,1], win:[['e2_7'],1,1]
+};
+// ---------- audio ----------
+let AC=null,muted=false,master=null;
+function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=muted?0:.5;master.connect(AC.destination)}catch(e){}}
+function tone(f0,f1,dur,type,vol,delay){if(!AC)return;const t=AC.currentTime+(delay||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'square';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);g.gain.setValueAtTime(vol||.2,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.02)}
+function noise(dur,vol,hp,delay){if(!AC)return;const t=AC.currentTime+(delay||0),n=AC.sampleRate*dur|0,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const s=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();s.buffer=b;f.type='highpass';f.frequency.value=hp||800;g.gain.value=vol||.3;s.connect(f);f.connect(g);g.connect(master);s.start(t)}
+const SFX={
+ shot(){noise(.12,.5,1200);tone(180,50,.1,'sawtooth',.25)},
+ jump(){tone(260,520,.16,'square',.12)},
+ land(){noise(.08,.25,200)},
+ dash(){noise(.28,.35,500);tone(700,200,.25,'sawtooth',.1)},
+ hurt(){tone(380,90,.35,'sawtooth',.35);noise(.2,.3,300)},
+ step(){noise(.04,.12,600)},
+ die(){tone(300,40,.9,'sawtooth',.35);noise(.5,.3,150,.1)},
+ win(){[392,523,659,784].forEach((f,i)=>tone(f,f,.18,'square',.15,i*.12))}
+};
+// voces: síntesis del navegador (español). Sin voz instalada, queda solo el grito sintetizado.
+function voz(txt,pitch,rate){if(muted||!window.speechSynthesis)return;try{const u=new SpeechSynthesisUtterance(txt);u.lang='es-ES';u.pitch=pitch||.2;u.rate=rate||1.15;u.volume=1;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+const VOZ={ataque:()=>voz('¡Fuego!',.1,1.3),dolor:()=>voz('¡Aaagh!',.1,1.1),dash:()=>voz('¡Vamos!',.15,1.3),salto:()=>voz('¡Hup!',.2,1.4),muerte:()=>voz('¡Aaaaaah!',.05,.8),victoria:()=>voz('¡Soldados de alta élite!',.1,1)};
+function scream(){tone(520,140,.7,'sawtooth',.3);tone(560,160,.7,'square',.12)}
+document.getElementById('mute').onclick=e=>{muted=!muted;e.target.textContent=muted?'🔇':'🔊';if(master)master.gain.value=muted?0:.5;if(muted&&window.speechSynthesis)speechSynthesis.cancel()};
+// ---------- entrada ----------
+const K={};const keymap={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowDown:'d',s:'d',ArrowUp:'u',w:'u',' ':'j',z:'j',k:'j',x:'f',j:'f',c:'t',l:'t',Shift:'t',h:'h',m:'m',v:'v',r:'rs'};
+const pressed={};
+addEventListener('keydown',e=>{audio();const k=keymap[e.key.length>1?e.key:e.key.toLowerCase()];if(k){K[k]=1;if(!pressed[k]){pressed[k]=1;edge(k)}e.preventDefault()}});
+addEventListener('keyup',e=>{const k=keymap[e.key.length>1?e.key:e.key.toLowerCase()];if(k){K[k]=0;pressed[k]=0}});
+let jumpQ=0,dashQ=0;
+function edge(k){if(k==='j')jumpQ=.12;if(k==='t')dashQ=.12;if(k==='h')hurtMe();if(k==='v'&&!P.dead){P.win=1.1;SFX.win();VOZ.victoria()}if(k==='rs')respawn()}
+const touchMap={bL:'l',bR:'r',bD:'d',bU:'u',bJ:'j',bF:'f',bT:'t'};
+if('ontouchstart' in window||navigator.maxTouchPoints>0||/touch/.test(location.search))document.body.classList.add('touch');
+Object.keys(touchMap).forEach(id=>{const el=document.getElementById(id),k=touchMap[id];
+ const dn=e=>{e.preventDefault();audio();K[k]=1;el.classList.add('on');edge(k)},up=e=>{e.preventDefault();K[k]=0;pressed[k]=0;el.classList.remove('on')};
+ el.addEventListener('pointerdown',dn);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up)});
+// ---------- mundo: bosque encantado (2 tramos unidos) ----------
+const GW=1172,GH=360;
+const TERR=[[0,226],[100,228],[150,238],[200,250],[250,262],[300,276],[340,291],[450,293],[520,291],[580,270],[640,248],[720,242],[745,262],[775,280],[850,284],[880,292],[1000,296],[1040,280],[1080,274],[1172,276]];
+function gY(x){if(x<=TERR[0][0])return TERR[0][1];for(let i=1;i<TERR.length;i++)if(x<=TERR[i][0]){const a=TERR[i-1],b=TERR[i],t=(x-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*t}return TERR[TERR.length-1][1]}
+const FLOOR=gY(80);
+const BG=new Image();BG.src='img/bg/bosque.jpg';
+const PLAT=[{x:260,y:230,w:120},{x:470,y:175,w:120},{x:680,y:230,w:140},{x:900,y:170,w:150}];
+const SOLID=PLAT.map(p=>({x:p.x,y:p.y,w:p.w,h:10,oneway:1}));
+const TARGETS=[560,860,1100].map(x=>({x,y:gY(x)-34*PS,hp:3}));
+// luciérnagas (partículas del motor)
+const FLY=Array.from({length:42},(_,i)=>({x:Math.random()*GW,y:80+Math.random()*230,ph:Math.random()*6.3,sp:.4+Math.random()*.9,r:1.2+Math.random()*1.8}));
+const tcv=document.createElement('canvas'),tcx=tcv.getContext('2d');
+// ---------- jugador ----------
+const P={x:80,y:FLOOR,vx:0,vy:0,dir:1,on:true,crouch:0,fire:0,flash:0,dash:0,dashCd:0,canDash:1,hp:5,inv:0,hurt:0,dead:0,win:0,t:0,stepT:0,coyote:0,state:'idle',fcount:0};
+const BU=[],PART=[],GHO=[];let ghT=0;
+function hurtMe(){if(P.inv>0||P.dead)return;P.hp--;P.inv=1.2;P.hurt=.45;P.vx=-P.dir*140;P.vy=-180;P.on=false;SFX.hurt();scream();VOZ.dolor();if(P.hp<=0){P.dead=1;P.vx=-P.dir*60;SFX.die();VOZ.muerte()}}
+function respawn(){Object.assign(P,{x:80,y:FLOOR,vx:0,vy:0,hp:5,inv:1,hurt:0,dead:0,win:0,dash:0});TARGETS.forEach(t=>t.hp=3)}
+const AIMV=[[1,0],[.707,-.707],[.25,-.97],[.707,.707],[.3,.95]];
+const SPEED=150*PS,G=1000*PS,JV=-430*PS,DASHV=380*PS,DASHT=.22,HW=9*PS;   // física proporcional al tamaño
+function step(dt){
+ P.t+=dt;jumpQ=Math.max(0,jumpQ-dt);dashQ=Math.max(0,dashQ-dt);P.inv=Math.max(0,P.inv-dt);P.hurt=Math.max(0,P.hurt-dt);P.fire=Math.max(0,P.fire-dt);P.brake=Math.max(0,(P.brake||0)-dt);P.flash=Math.max(0,P.flash-dt);P.dashCd=Math.max(0,P.dashCd-dt);
+ if(P.win>0&&!P.dead){P.win-=dt;P.vx=0;if(K.l||K.r||K.j||K.f||K.t||K.d)P.win=0;if(P.win<0)P.win=0}
+ const lock=P.dead||P.hurt>0||P.win>0;
+ const mv=(K.r?1:0)-(K.l?1:0);
+ P.aim=K.u?(mv?1:2):((!P.on&&K.d)?(mv?3:4):0);
+ P.crouch=(!lock&&P.on&&K.d&&P.dash<=0)?1:0;P.crAge=P.crouch?(P.crAge||0)+dt:0;
+ if(!lock&&P.dash<=0){
+  if(mv&&!P.crouch){P.vx=mv*SPEED;P.dir=mv}else if(P.crouch||!mv){P.vx*= P.on?0:.9;if(Math.abs(P.vx)<5)P.vx=0}
+  if(mv&&!P.on&&!P.crouch){P.vx=mv*SPEED;P.dir=mv}
+  if(mv&&P.crouch)P.dir=mv;
+  // salto (con colchón de tiempo)
+  if(jumpQ>0&&(P.on||P.coyote>0)&&!P.crouch){P.vy=JV;P.on=false;P.coyote=0;jumpQ=0;SFX.jump();if(Math.random()<.35)VOZ.salto()}
+  if(!K.j&&P.vy<-150&&!P.on)P.vy*=.86;     // salto variable
+  // impulso
+  if(dashQ>0&&P.dashCd<=0&&P.canDash){P.dash=DASHT;P.dashT=0;P.canDash=0;P.dashCd=.45;P.vy=0;dashQ=0;SFX.dash();VOZ.dash()}
+  // disparo
+  if(K.f&&P.fire<=0){shoot()}
+ }
+ if(P.dash>0){P.dash-=dt;P.dashT+=dt;P.vx=P.dir*DASHV;P.vy=0;if(P.dash<=0)P.brake=.2}
+ else P.vy+=G*dt;
+ if(P.vy>700)P.vy=700;
+ // mover X
+ P.x+=P.vx*dt;P.x=Math.max(14*PS,Math.min(GW-14*PS,P.x));
+ // mover Y + suelo / plataformas
+ const oy=P.y;P.y+=P.vy*dt;const was=P.on;P.on=false;
+ if(P.vy>=0){const gy=gY(P.x);
+  if(P.y>=gy&&oy<=gy+8*PS){P.y=gy;P.vy=0;P.on=true}                       // aterriza o sube la cuesta
+  else if(was&&P.dash<=0&&gy>P.y&&gy-P.y<=9*PS){P.y=gy;P.vy=0;P.on=true}  // pegado al suelo al bajar la cuesta
+  if(!P.on)for(const s of SOLID){if(P.x+HW>s.x&&P.x-HW<s.x+s.w&&oy<=s.y+1&&P.y>=s.y){P.y=s.y;P.vy=0;P.on=true;break}}}
+ if(P.on){if(!was){SFX.land();P.landT=.14}P.canDash=1;P.coyote=.1}else P.coyote=Math.max(0,P.coyote-dt);
+ P.landT=Math.max(0,(P.landT||0)-dt);
+ // pasos
+ if(P.on&&Math.abs(P.vx)>20){P.stepT-=dt;if(P.stepT<=0){SFX.step();P.stepT=.26}}
+ // balas
+ for(let i=BU.length-1;i>=0;i--){const b=BU[i];b.x+=b.vx*dt;b.y+=(b.vy||0)*dt;b.l-=dt;let hit=b.l<=0;
+  for(const t of TARGETS)if(t.hp>0&&Math.abs(b.x-t.x)<14&&b.y>t.y-8&&b.y<t.y+40){t.hp--;t.hit=.12;hit=true;noise(.1,.3,900);if(t.hp<=0)SFX.win&&tone(200,60,.3,'square',.2)}
+  if(hit)BU.splice(i,1)}
+ for(const t of TARGETS)t.hit=Math.max(0,(t.hit||0)-dt);
+ ghT-=dt;if(ghT<=0&&(P.dash>0||(!P.on&&P.vy>360))){ghT=P.dash>0?.025:.045;GHO.push({n:frame(),x:P.x,y:P.y,d:P.dir,l:P.dash>0?.22:.16,L:P.dash>0?.22:.16,a:P.dash>0?.5:.25})}
+ for(let i=GHO.length-1;i>=0;i--){GHO[i].l-=dt;if(GHO[i].l<=0)GHO.splice(i,1)}
+ for(let i=PART.length-1;i>=0;i--){PART[i].l-=dt;if(PART[i].l<=0)PART.splice(i,1)}
+  // estado visual
+ let s='idle';
+ if(P.dead)s='dead';else if(P.hurt>0)s=P.on?'hurt':'fly';else if(P.win>0)s='win';else if(P.dash>0)s=P.dashT<.05?'dash0':'dash';
+ else if(!P.on&&P.aim>0)s='aim'+P.aim;
+ else if(!P.on)s=P.vy<-380?'jump0':(P.vy<-230?'rise':(P.vy<-70?'rise2':(P.vy<70?'apex':(P.vy<200?'fall0':'fall'))));
+ else if(P.on&&P.aim>0&&P.aim<3&&!P.crouch&&(K.f||P.fire>0||P.aim>0))s='aim'+P.aim;
+ else if(P.landT>0)s='land';
+ else if(P.brake>0&&!mv&&!P.crouch)s=P.brake>.09?'brake':'recov';
+ else if(P.crouch)s=P.aim>0?'caim1':(P.crAge<.07?'crouchin':'crouch');
+ else if(Math.abs(P.vx)<=20&&P.flash>0&&!K.u)s=(P.shotN&1)?'flash2':'flash';
+ else if(Math.abs(P.vx)<=20&&(K.f||P.fire>0))s='aim0';
+ else if(Math.abs(P.vx)>20)s='run';
+
+ if(s!==P.state){P.state=s;P.ft=0}else P.ft=(P.ft||0)+dt;
+}
+function shoot(){
+ P.fire=.16;P.flash=.09;P.shotN=(P.shotN||0)+1;SFX.shot();if(Math.random()<.18)VOZ.ataque();
+ const m=SPR[frame()],kz=SC*(m.sc||1)/(m.z||1),mx=P.x+P.dir*(m.tx-m.cx)*kz,my=P.y-(m.by-m.ty)*kz;
+ const av=AIMV[P.crouch&&P.aim>1?1:P.aim];BU.push({x:mx,y:my,vx:av[0]*P.dir*620,vy:av[1]*620,l:1.1,d:P.dir});
+ PART.push({x:mx,y:my,l:.06,v:1})
+}
+// ---------- dibujo ----------
+const cv=document.getElementById('c'),cx=cv.getContext('2d');let kk=1,ox=0,oy=0,cam=0;
+const FG=new Image();FG.src='img/bg/primer_plano.jpg';const FGP=1.3,FGW=1747.5;      // primer plano: parallax 1.3
+const fgc=document.createElement('canvas'),fcx=fgc.getContext('2d');
+function fit(){const dpr=Math.min(2,devicePixelRatio||1),w=innerWidth,h=innerHeight;cv.width=w*dpr;cv.height=h*dpr;fgc.width=cv.width;fgc.height=cv.height;kk=Math.min(w*dpr/640,h*dpr/GH);ox=(w*dpr-640*kk)/2;oy=(h*dpr-GH*kk)/2;
+ document.getElementById('rot').style.display=(h>w&&document.body.classList.contains('touch'))?'flex':'none'}
+addEventListener('resize',fit);fit();
+function spr(n,x,y,dir,alpha){const m=SPR[n],im=IMG[n];if(!im.complete)return;cx.save();cx.globalAlpha=alpha==null?1:alpha;cx.translate(x,y);cx.scale(dir,1);cx.imageSmoothingQuality='high';
+ const k=SC*(m.sc||1)/(m.z||1);cx.drawImage(im,-m.cx*k,-m.by*k,m.w*k,m.h*k);cx.restore()}
+function sprTint(n,x,y,dir,alpha){const m=SPR[n],im=IMG[n];if(!im.complete)return;const k=SC*(m.sc||1)/(m.z||1),w=m.w*k,h=m.h*k,S=kk;
+ tcv.width=Math.ceil(w*S);tcv.height=Math.ceil(h*S);tcx.imageSmoothingQuality='high';tcx.drawImage(im,0,0,tcv.width,tcv.height);
+ tcx.globalCompositeOperation='source-atop';tcx.fillStyle='rgba(26,92,70,.20)';tcx.fillRect(0,0,tcv.width,tcv.height);
+ const g=tcx.createLinearGradient(0,0,0,tcv.height);g.addColorStop(0,'rgba(190,255,200,.10)');g.addColorStop(1,'rgba(0,20,10,.22)');tcx.fillStyle=g;tcx.fillRect(0,0,tcv.width,tcv.height);tcx.globalCompositeOperation='source-over';
+ cx.save();cx.globalAlpha=alpha==null?1:alpha;cx.translate(x,y);cx.scale(dir,1);cx.drawImage(tcv,-m.cx*k,-m.by*k,tcv.width/S,tcv.height/S);cx.restore()}
+function frame(){const a=AN[P.state]||AN.idle,i=a[2]?Math.floor((P.ft||0)*a[1])%a[0].length:0;return a[0][i]}
+function draw(){
+ cx.setTransform(1,0,0,1,0,0);cx.fillStyle='#000';cx.fillRect(0,0,cv.width,cv.height);
+ cx.setTransform(kk,0,0,kk,ox,oy);cx.beginPath();cx.rect(0,0,640,GH);cx.clip();
+ cam+=(Math.max(0,Math.min(GW-640,P.x-320))-cam)*.12;
+ cx.fillStyle='#06241d';cx.fillRect(0,0,640,GH);
+ cx.translate(-Math.round(cam),0);
+ cx.imageSmoothingQuality='high';if(BG.complete&&BG.naturalWidth)cx.drawImage(BG,0,0,GW,GH);
+ const T=performance.now()/1000;
+ // plataformas de prueba: troncos oscuros
+ PLAT.forEach(p=>{cx.fillStyle='#12261d';cx.fillRect(p.x,p.y,p.w,10);cx.fillStyle='#5f8f45';cx.fillRect(p.x,p.y,p.w,2.5)});
+ // dianas (marcadores)
+ TARGETS.forEach(t=>{if(t.hp<=0)return;cx.fillStyle=t.hit>0?'#fff':'#b04030';cx.fillRect(t.x-10*PS,t.y,20*PS,34*PS);cx.fillStyle='#fff';cx.font='10px Arial';cx.textAlign='center';cx.fillText('DIANA',t.x,t.y-4)});
+ // estelas del impulso
+ PART.forEach(p=>{if(p.v===1){cx.fillStyle='#ffe27a';cx.beginPath();cx.arc(p.x,p.y,5,0,7);cx.fill()}});
+ GHO.forEach(g=>spr(g.n,g.x,g.y,g.d,g.a*g.l/g.L));
+ // soldado
+ const blink=P.inv>0&&!P.dead&&Math.floor(P.t*20)%2===0;
+ if(P.on){cx.fillStyle='rgba(0,12,8,.35)';cx.beginPath();cx.ellipse(P.x,P.y+1,15*PS,3.2*PS,0,0,7);cx.fill()}
+ sprTint(frame(),P.x,P.y+(P.state==='dead'?2:0),P.dir,blink?.35:1);
+ // balas
+ cx.strokeStyle='#ffd84a';cx.lineWidth=2.5;BU.forEach(b=>{cx.beginPath();cx.moveTo(b.x,b.y);cx.lineTo(b.x-b.vx*.026,b.y-(b.vy||0)*.026);cx.stroke()});
+ // primer plano oscuro (multiplicar) con un hueco suave alrededor del soldado para no taparlo
+ if(FG.complete&&FG.naturalWidth){fcx.setTransform(1,0,0,1,0,0);fcx.globalCompositeOperation='source-over';fcx.clearRect(0,0,fgc.width,fgc.height);fcx.setTransform(kk,0,0,kk,ox,oy);fcx.imageSmoothingQuality='high';fcx.drawImage(FG,-cam*FGP,10,FGW,GH);
+  const sx=P.x-cam,sy=P.y-38,g=fcx.createRadialGradient(sx,sy,18,sx,sy,105);g.addColorStop(0,'rgba(0,0,0,.95)');g.addColorStop(1,'rgba(0,0,0,0)');fcx.globalCompositeOperation='destination-out';fcx.fillStyle=g;fcx.fillRect(sx-110,sy-110,220,220);fcx.globalCompositeOperation='source-over';
+  cx.save();cx.setTransform(1,0,0,1,0,0);cx.globalCompositeOperation='multiply';cx.drawImage(fgc,0,0);cx.restore()}
+ // niebla baja que se desplaza
+ for(let i=0;i<7;i++){const fx=((i*210+T*(5+i%3*3))%(GW+420))-210,fy=gY(fx)+8-(i%3)*10;const g=cx.createRadialGradient(fx,fy,4,fx,fy,150);g.addColorStop(0,'rgba(150,235,200,.13)');g.addColorStop(1,'rgba(150,235,200,0)');cx.fillStyle=g;cx.fillRect(fx-160,fy-70,320,140)}
+ // rayos de luz (aditivos)
+ cx.globalCompositeOperation='lighter';for(let i=0;i<4;i++){const rx=140+i*300+Math.sin(T*.25+i*2)*40,al=.045+.03*Math.sin(T*.4+i*1.7);const g=cx.createLinearGradient(rx,0,rx-110,GH);g.addColorStop(0,'rgba(190,255,200,'+al+')');g.addColorStop(1,'rgba(190,255,200,0)');cx.fillStyle=g;cx.beginPath();cx.moveTo(rx-26,0);cx.lineTo(rx+34,0);cx.lineTo(rx-70,GH);cx.lineTo(rx-190,GH);cx.closePath();cx.fill()}
+ // luciérnagas
+ FLY.forEach(f=>{const px=f.x+Math.sin(T*f.sp+f.ph)*22,py=f.y+Math.cos(T*f.sp*.8+f.ph)*14,al=.35+.5*Math.sin(T*1.6+f.ph);if(al<=0)return;const g=cx.createRadialGradient(px,py,0,px,py,f.r*5);g.addColorStop(0,'rgba(215,255,170,'+al+')');g.addColorStop(1,'rgba(215,255,170,0)');cx.fillStyle=g;cx.fillRect(px-f.r*5,py-f.r*5,f.r*10,f.r*10)});
+ cx.globalCompositeOperation='source-over';
+ // HUD
+ cx.setTransform(kk,0,0,kk,ox,oy);{const g=cx.createRadialGradient(320,GH*.55,GH*.45,320,GH*.55,GH*1.1);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,10,6,.45)');cx.fillStyle=g;cx.fillRect(0,0,640,GH)}
+ cx.fillStyle='#fff';cx.font='bold 13px Arial';cx.textAlign='left';
+ cx.fillText('SOLDADOS DE ALTA ELITE · '+VERSION,10,18);
+ for(let i=0;i<5;i++){cx.fillStyle=i<P.hp?'#e04040':'#444';cx.fillRect(10+i*18,26,14,12)}
+ cx.fillStyle='#ddd';cx.font='11px Arial';cx.fillText('Estado: '+P.state+(P.canDash?'  ⚡ impulso listo':'  ⚡ recargando (toca suelo)'),10,54);
+ if(!document.body.classList.contains('touch')){cx.fillText('◀▶/A D mover · ▼/S agachar · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · V victoria · R reiniciar · M sonido',10,GH-8)}
+ if(P.dead){cx.fillStyle='#000a';cx.fillRect(0,130,640,80);cx.fillStyle='#fff';cx.font='bold 26px Arial';cx.textAlign='center';cx.fillText('MISIÓN FALLIDA',320,172);cx.font='13px Arial';cx.fillText('Pulsa R o salta para reiniciar',320,196)}
+}
+let last=performance.now(),started=false;
+function loop(t){const dt=Math.min(.033,(t-last)/1000);last=t;
+ if(P.dead&&(K.j||K.rs)&&P.t>0)if(P.deadT===undefined||P.t-P.deadT>1){respawn();P.deadT=undefined}
+ if(P.dead&&P.deadT===undefined)P.deadT=P.t;
+ step(dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+addEventListener('pointerdown',()=>audio(),{once:true});
+</script></body></html>
