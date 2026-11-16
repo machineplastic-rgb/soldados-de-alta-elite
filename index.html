@@ -30,7 +30,7 @@ body.touch #knob{display:block}
 <script src="local/ocula.js"></script>
 <script src="vigia.js"></script>
 <script>
-const VERSION='demo técnica v15';
+const VERSION='demo técnica v17';
 // ---------- sprites ----------
 const NAMES=Object.keys(SPR),IMG={};let loaded=0;
 NAMES.forEach(n=>{const i=new Image();i.onload=()=>{loaded++};i.src='img/spr/'+n+'.webp';IMG[n]=i});
@@ -39,7 +39,7 @@ const SC=56/338*PS;                      // de pie = 90 px
 // animaciones: [fotogramas], fps, bucle
 const AN={
  idle:[['e2_0','e2_1'],1.6,1], run:[['r1_0','r1_1','r1_2','r1_3','r1_4','r1_5','r1_6','r1_7'],13,1],
- crouch:[['a1_5'],1,1], caim1:[['a1_6'],1,1], aim0:[['a1_0'],1,1], aim1:[['a1_1'],1,1], aim2:[['a1_2'],1,1], aim3:[['a1_3'],1,1], aim4:[['a1_4'],1,1], crouchin:[['j1_0'],1,1], flash:[['a1_0'],1,1], flash2:[['a1_0'],1,1],
+ crouch:[['a1_5'],1,1], caim1:[['a1_6'],1,1], aim0:[['ra_1'],1,1], aim1:[['a1_1'],1,1], aim2:[['a1_2'],1,1], aim3:[['a1_3'],1,1], aim4:[['a1_4'],1,1], crouchin:[['j1_0'],1,1], flash:[['ra_1'],1,1], flash2:[['ra_1'],1,1], runaim:[['ra_0','ra_1','ra_2','ra_3'],10,1], runu:[['ru_0','ru_1','ru_2','ru_3','ru_4'],12,1],
  jump0:[['j1_1'],1,1], rise:[['j1_2'],1,1], rise2:[['j1_3'],1,1], apex:[['j1_4'],1,1], fall0:[['j1_5'],1,1], fall:[['j1_6'],1,1], land:[['j1_7'],1,1], pre:[['j1_0'],1,1],
  dash0:[['d1_1'],1,1], dash:[['d1_2','d1_3','d1_4','d1_5'],20,1], brake:[['d1_6'],1,1], recov:[['d1_7'],1,1], hurt:[['e2_4'],1,1], fly:[['e2_5'],1,1], dead:[['e2_6'],1,1], win:[['e2_7'],1,1]
 };
@@ -100,16 +100,20 @@ Object.keys(touchMap).forEach(id=>{const el=document.getElementById(id),k=touchM
  const dn=e=>{e.preventDefault();audio();K[k]=1;el.classList.add('on');edge(k)},up=e=>{e.preventDefault();K[k]=0;pressed[k]=0;el.classList.remove('on')};
  el.addEventListener('pointerdown',dn);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up)});
 // ---------- mundo: bosque encantado (2 tramos unidos) ----------
-const GW=1172,GH=360;
-const TERR=[[0,226],[100,228],[150,238],[200,250],[250,262],[300,276],[340,291],[450,293],[520,291],[580,270],[640,248],[720,242],[745,262],[775,280],[850,284],[880,292],[1000,296],[1040,280],[1080,274],[1172,276]];
+const GW=2228,GH=360;
+// camino BAJO (suelo, medido sobre bosque.jpg) y camino ALTO (tronco caído del tramo 3, se sube saltando desde el suelo; abajo + salto = bajar)
+const TERR=[[0,226],[100,228],[150,238],[200,250],[250,262],[300,276],[340,291],[450,293],[520,291],[580,270],[640,248],[720,242],[745,262],[775,280],[850,284],[880,292],[1000,292],[1050,288],[1100,285],[1180,286],[1300,296],[1400,294],[1440,276],[1480,264],[1530,254],[1600,262],[1690,266],[1710,258],[1760,254],[1830,256],[1900,250],[1940,248],[1990,248],[2060,255],[2130,262],[2228,262]];
+const HIGH=[[1130,252],[1200,215],[1250,188],[1300,166],[1350,152],[1450,148],[1505,152]];
+function ly(pts,x){if(x<pts[0][0]||x>pts[pts.length-1][0])return null;for(let i=1;i<pts.length;i++)if(x<=pts[i][0]){const a=pts[i-1],b=pts[i],t=(x-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*t}return pts[pts.length-1][1]}
+const SURF=[{pts:TERR,one:false},{pts:HIGH,one:true}];
 function gY(x){if(x<=TERR[0][0])return TERR[0][1];for(let i=1;i<TERR.length;i++)if(x<=TERR[i][0]){const a=TERR[i-1],b=TERR[i],t=(x-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*t}return TERR[TERR.length-1][1]}
 const FLOOR=gY(80);
 const BG=new Image();BG.src='img/bg/bosque.jpg';
-const PLAT=[{x:260,y:230,w:120},{x:470,y:175,w:120},{x:680,y:230,w:140},{x:900,y:170,w:150}];
+const PLAT=[];
 const SOLID=PLAT.map(p=>({x:p.x,y:p.y,w:p.w,h:10,oneway:1}));
 const TARGETS=(window.OCULA||window.VIGIA)?[]:[560,860,1100].map(x=>({x,y:gY(x)-34*PS,hp:3}));
 // luciérnagas (partículas del motor)
-const FLY=Array.from({length:42},(_,i)=>({x:Math.random()*GW,y:80+Math.random()*230,ph:Math.random()*6.3,sp:.4+Math.random()*.9,r:1.2+Math.random()*1.8}));
+const FLY=Array.from({length:70},(_,i)=>({x:Math.random()*GW,y:80+Math.random()*230,ph:Math.random()*6.3,sp:.4+Math.random()*.9,r:1.2+Math.random()*1.8}));
 const tcv=document.createElement('canvas'),tcx=tcv.getContext('2d'),ecv=document.createElement('canvas'),ecx=ecv.getContext('2d');
 // ---------- jugador ----------
 const P={x:80,y:FLOOR,vx:0,vy:0,dir:1,on:true,crouch:0,fire:0,flash:0,dash:0,dashCd:0,canDash:1,hp:5,inv:0,hurt:0,dead:0,win:0,t:0,stepT:0,coyote:0,state:'idle',fcount:0};
@@ -117,7 +121,7 @@ const BU=[],PART=[],GHO=[];let ghT=0;
 // ---------- enemigo local: Ocula (solo en casa; la carpeta local\ no se sube a git) ----------
 const OC=window.OCULA||window.VIGIA,EN=[],ENIMG={};      // en casa sale Ocula (local); en la web pública, el Vigía original
 if(OC){Object.keys(OC.fr).forEach(n=>{const i=new Image();i.src=OC.base+n+'.webp';ENIMG[n]=i});
- [640,900,1090].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:8,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}))}
+ [640,900,1380,1650,2020].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:8,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}))}
 const OC_FPS=7,OC_SPD=34;
 function enFrame(e){switch(e.mode){case 'walk':return 'ow'+(Math.floor(e.t*OC_FPS)%8);case 'closing':return e.mt<.12?'es1':'es2';case 'closed':return 'es2';case 'opening':return e.mt<.12?'es3':'es0';case 'wind':return 'es4';case 'strike':return 'es5';case 'recover':return 'es0';case 'hurt':return 'es6';case 'dead':return 'es7'}return 'es0'}
 const enOpen=e=>!(e.mode==='closing'&&e.mt>=.12)&&e.mode!=='closed'&&e.mode!=='hurt'&&e.mode!=='dead';     // solo es vulnerable con el ojo abierto
@@ -162,7 +166,8 @@ function step(dt){
   if(mv&&!P.on&&!P.crouch){P.vx=mv*SPEED;P.dir=mv}
   if(mv&&P.crouch)P.dir=mv;
   // salto (con colchón de tiempo)
-  if(jumpQ>0&&(P.on||P.coyote>0)&&!P.crouch){P.vy=JV;P.on=false;P.coyote=0;jumpQ=0;SFX.jump();VOZ.salto()}
+  if(jumpQ>0&&P.on&&K.d&&P.surf&&P.surf.one){P.drop=.3;P.on=false;P.surf=null;P.vy=80;jumpQ=0}
+  else if(jumpQ>0&&(P.on||P.coyote>0)&&!P.crouch){P.vy=JV;P.on=false;P.coyote=0;jumpQ=0;SFX.jump();VOZ.salto()}
   if(!K.j&&P.vy<-150&&!P.on)P.vy*=.86;     // salto variable
   // impulso
   if(dashQ>0&&P.dashCd<=0&&P.canDash){P.dash=DASHT;P.dashT=0;P.canDash=0;P.dashCd=.45;P.vy=0;dashQ=0;SFX.dash();VOZ.dash()}
@@ -176,12 +181,14 @@ function step(dt){
  P.x+=P.vx*dt;P.x=Math.max(14*PS,Math.min(GW-14*PS,P.x));
  // mover Y + suelo / plataformas
  const oy=P.y;P.y+=P.vy*dt;const was=P.on;P.on=false;
- if(P.vy>=0){const gy=gY(P.x);
-  if(P.y>=gy&&oy<=gy+8*PS){P.y=gy;P.vy=0;P.on=true}                       // aterriza o sube la cuesta
-  else if(was&&P.dash<=0&&gy>P.y&&gy-P.y<=9*PS){P.y=gy;P.vy=0;P.on=true}  // pegado al suelo al bajar la cuesta
-  if(!P.on)for(const s of SOLID){if(P.x+HW>s.x&&P.x-HW<s.x+s.w&&oy<=s.y+1&&P.y>=s.y){P.y=s.y;P.vy=0;P.on=true;break}}}
+ if(P.vy>=0){
+  if(was&&P.surf&&P.dash<=0){const g=ly(P.surf.pts,P.x);if(g!==null&&Math.abs(g-P.y)<=10*PS){P.y=g;P.vy=0;P.on=true}}     // sigue la superficie en cuestas
+  if(!P.on){let best=null,by=1e9;for(const sf of SURF){if(sf.one&&P.drop>0)continue;const g=ly(sf.pts,P.x);if(g===null)continue;
+    if(P.y>=g&&oy<=g+8*PS&&g<by){best=sf;by=g}}
+   if(best){P.y=by;P.vy=0;P.on=true;P.surf=best}}
+  if(!P.on)P.surf=null}
  if(P.on){if(!was){SFX.land();P.landT=.14}P.canDash=1;P.coyote=.1}else P.coyote=Math.max(0,P.coyote-dt);
- P.landT=Math.max(0,(P.landT||0)-dt);
+ P.landT=Math.max(0,(P.landT||0)-dt);P.drop=Math.max(0,(P.drop||0)-dt);
  // pasos
  if(P.on&&Math.abs(P.vx)>20){P.stepT-=dt;if(P.stepT<=0){SFX.step();P.stepT=.26}}
  // balas
@@ -197,13 +204,14 @@ function step(dt){
  if(P.dead)s='dead';else if(P.hurt>0)s=P.on?'hurt':'fly';else if(P.win>0)s='win';else if(P.dash>0)s=P.dashT<.05?'dash0':'dash';
  else if(!P.on&&P.aim>0)s='aim'+P.aim;
  else if(!P.on)s=P.vy<-380?'jump0':(P.vy<-230?'rise':(P.vy<-70?'rise2':(P.vy<70?'apex':(P.vy<200?'fall0':'fall'))));
+ else if(P.on&&P.aim===1&&!P.crouch&&Math.abs(P.vx)>20)s='runu';
  else if(P.on&&P.aim>0&&P.aim<3&&!P.crouch&&(K.f||P.fire>0||P.aim>0))s='aim'+P.aim;
  else if(P.landT>0)s='land';
  else if(P.brake>0&&!mv&&!P.crouch)s=P.brake>.09?'brake':'recov';
  else if(P.crouch)s=P.aim>0?'caim1':(P.crAge<.07?'crouchin':'crouch');
  else if(Math.abs(P.vx)<=20&&P.flash>0&&!K.u)s=(P.shotN&1)?'flash2':'flash';
  else if(Math.abs(P.vx)<=20&&(K.f||P.fire>0))s='aim0';
- else if(Math.abs(P.vx)>20)s='run';
+ else if(Math.abs(P.vx)>20)s=(K.f||P.fire>0)?'runaim':'run';
 
  if(s!==P.state){P.state=s;P.ft=0}else P.ft=(P.ft||0)+dt;
  if(OC)enemyStep(dt);
@@ -211,7 +219,7 @@ function step(dt){
 function shoot(){
  P.fire=.16;P.flash=.09;P.shotN=(P.shotN||0)+1;SFX.shot();VOZ.ataque();P.glow=1;
  // fotograma que se mostrará al apuntar: de él salen la punta del cañón y el ángulo real del fusil
- let fr=frame();if(P.aim>0)fr=P.crouch?'a1_6':['a1_0','a1_1','a1_2','a1_3','a1_4'][P.aim];else if(P.crouch)fr='a1_5';
+ let fr=frame();if(P.aim>0&&P.state!=='runu')fr=P.crouch?'a1_6':['a1_0','a1_1','a1_2','a1_3','a1_4'][P.aim];else if(P.crouch)fr='a1_5';
  const m=SPR[fr],kz=SC*(m.sc||1)/(m.z||1),mx=P.x+P.dir*(m.tx-m.cx)*kz,my=P.y-(m.by-m.ty)*kz;
  let ax=1,ay=0;if(P.aim>0&&m.ax!==undefined){ax=m.ax;ay=m.ay}   // solo al apuntar se usa el ángulo medido del fusil; en carrera, horizontal
  BU.push({x:mx,y:my,vx:ax*P.dir*700,vy:ay*700,l:1.0,d:P.dir});
@@ -220,7 +228,7 @@ function shoot(){
 // ---------- dibujo (optimizado: capas pre-escaladas, texturas de luz y resolución interna limitada) ----------
 const cv=document.getElementById('c'),cx=cv.getContext('2d',{alpha:false});let kk=1,cam=0,VW=640;
 const RS=2;   // píxeles internos por unidad lógica: tope de resolución para que vaya fluido, también en pantalla completa
-const FG=new Image();FG.src='img/bg/primer_plano.jpg';const FGP=1.3,FGW=1747.5;      // primer plano: parallax 1.3
+const FG=new Image();FG.src='img/bg/primer_plano.jpg';const FGP=1.3,FGW=2850;      // primer plano: parallax 1.3
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
 let BGc=null,FGc=null,VIG=null;
 const glowTex=(r,g,b,stops)=>{const c=mk(128,128),x=c.getContext('2d'),gr=x.createRadialGradient(64,64,0,64,64,64);stops.forEach(t=>gr.addColorStop(t[0],'rgba('+r+','+g+','+b+','+t[1]+')'));x.fillStyle=gr;x.fillRect(0,0,128,128);return c};
@@ -275,16 +283,17 @@ function draw(){
  // balas de plasma
  if(BU.length){cx.save();cx.globalCompositeOperation='lighter';cx.lineCap='round';BU.forEach(b=>{const tx=b.x-b.vx*.04,ty=b.y-(b.vy||0)*.04;cx.strokeStyle='rgba(40,120,255,.35)';cx.lineWidth=7;cx.beginPath();cx.moveTo(b.x,b.y);cx.lineTo(tx,ty);cx.stroke();cx.strokeStyle='rgba(120,200,255,.8)';cx.lineWidth=3.6;cx.beginPath();cx.moveTo(b.x,b.y);cx.lineTo(b.x-b.vx*.026,b.y-(b.vy||0)*.026);cx.stroke();cx.strokeStyle='#eaf8ff';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(b.x,b.y);cx.lineTo(b.x-b.vx*.016,b.y-(b.vy||0)*.016);cx.stroke()});cx.restore()}
  // primer plano oscuro, opaco (alfa normal)
- if(FGc){cx.save();cx.setTransform(1,0,0,1,0,0);if(FGc._raw)cx.globalCompositeOperation='multiply';cx.drawImage(FGc,Math.min(Math.round(cam*FGP*RS),FGc.width-cv.width),0,cv.width,FGc.height,0,Math.round(10*RS),cv.width,FGc.height);cx.restore()}
+ if(FGc){cx.save();cx.setTransform(1,0,0,1,0,0);if(FGc._raw)cx.globalCompositeOperation='multiply';cx.drawImage(FGc,Math.min(Math.round(cam*FGP*RS),FGc.width-cv.width),0,cv.width,FGc.height,0,Math.round(-16*RS),cv.width,Math.round((GH+28)*RS));cx.restore()}
  // niebla baja que se desplaza
  cx.globalAlpha=.13;for(let i=0;i<7;i++){const fx=((i*210+T*(5+i%3*3))%(GW+420))-210,fy=gY(fx)+8-(i%3)*10;cx.drawImage(TEX_FOG,fx-150,fy-70,300,140)}
  // rayos de luz, luz de plasma y luciérnagas (aditivos)
  cx.globalCompositeOperation='lighter';
- for(let i=0;i<4;i++){const rx=140+i*300+Math.sin(T*.25+i*2)*40;cx.globalAlpha=Math.max(0,.045+.03*Math.sin(T*.4+i*1.7));cx.drawImage(TEX_RAY,rx-110,0)}
+ for(let i=0;i<Math.ceil(GW/300);i++){const rx=140+i*300+Math.sin(T*.25+i*2)*40;cx.globalAlpha=Math.max(0,.045+.03*Math.sin(T*.4+i*1.7));cx.drawImage(TEX_RAY,rx-110,0)}
  {const L=(x,y,r,a)=>{cx.globalAlpha=Math.min(1,a);cx.drawImage(TEX_BLUE,x-r,y-r,r*2,r*2)};
   BU.forEach(b=>L(b.x,b.y,52,.30));PART.forEach(p=>{if(p.v===1)L(p.x,p.y,48,.7*(p.l/p.L))});if((P.glow||0)>.03)L(P.x,P.y-42,160,.28*P.glow)}
  FLY.forEach(f=>{const px=f.x+Math.sin(T*f.sp+f.ph)*22,py=f.y+Math.cos(T*f.sp*.8+f.ph)*14,al=.35+.5*Math.sin(T*1.6+f.ph);if(al<=0)return;cx.globalAlpha=Math.min(1,al);cx.drawImage(TEX_FLY,px-f.r*5,py-f.r*5,f.r*10,f.r*10)});
  cx.globalCompositeOperation='source-over';cx.globalAlpha=1;
+ if(/dbg/.test(location.search)){cx.save();cx.lineWidth=2;[[TERR,'#ff0'],[HIGH,'#0ff']].forEach(([p,c])=>{cx.strokeStyle=c;cx.beginPath();p.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1]));cx.stroke()});cx.restore()}
  // viñeta y HUD
  cx.setTransform(1,0,0,1,0,0);cx.drawImage(VIG,0,0);
  cx.setTransform(kk,0,0,kk,0,0);
