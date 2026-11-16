@@ -23,12 +23,12 @@ body.touch #knob{display:block}
 <button id="mute" class="tb">🔊</button><button id="fs" class="tb">⛶</button>
 <div id="rot">Gira el móvil en horizontal ↻</div>
 <div id="zone"></div><div id="knob" class="idle"></div>
-<div class="b" id="bJ" style="right:calc(22px + env(safe-area-inset-right));bottom:calc(24px + env(safe-area-inset-bottom));width:92px;height:92px">SALTO</div>
-<div class="b" id="bF" style="right:calc(126px + env(safe-area-inset-right));bottom:calc(24px + env(safe-area-inset-bottom));width:92px;height:92px">FUEGO</div>
-<div class="b" id="bT" style="right:calc(78px + env(safe-area-inset-right));bottom:calc(126px + env(safe-area-inset-bottom));width:68px;height:68px;font-size:24px">⚡</div>
+<div class="b" id="bJ" style="right:calc(24px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px;font-size:13px">SALTO</div>
+<div class="b" id="bF" style="right:calc(112px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px;font-size:13px">FUEGO</div>
+<div class="b" id="bT" style="right:calc(68px + env(safe-area-inset-right));bottom:calc(118px + env(safe-area-inset-bottom));width:76px;height:76px;font-size:26px">⚡</div>
 <script src="spr.js"></script>
 <script>
-const VERSION='demo técnica v12 · fluida';
+const VERSION='demo técnica v13';
 // ---------- sprites ----------
 const NAMES=Object.keys(SPR),IMG={};let loaded=0;
 NAMES.forEach(n=>{const i=new Image();i.onload=()=>{loaded++};i.src='img/spr/'+n+'.webp';IMG[n]=i});
@@ -43,7 +43,7 @@ const AN={
 };
 // ---------- audio ----------
 let AC=null,muted=false,master=null;
-function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=muted?0:.5;master.connect(AC.destination)}catch(e){}}
+function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=muted?0:.5;const comp=AC.createDynamicsCompressor();comp.threshold.value=-14;comp.knee.value=10;comp.ratio.value=8;comp.attack.value=.003;comp.release.value=.15;master.connect(comp);comp.connect(AC.destination)}catch(e){}}
 function tone(f0,f1,dur,type,vol,delay){if(!AC)return;const t=AC.currentTime+(delay||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'square';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);g.gain.setValueAtTime(vol||.2,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.02)}
 function noise(dur,vol,hp,delay){if(!AC)return;const t=AC.currentTime+(delay||0),n=AC.sampleRate*dur|0,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const s=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();s.buffer=b;f.type='highpass';f.frequency.value=hp||800;g.gain.value=vol||.3;s.connect(f);f.connect(g);g.connect(master);s.start(t)}
 // voz grave sintetizada: fuente de dientes de sierra + dos formantes (como una vocal) + aspereza y soplo
@@ -52,7 +52,7 @@ function vocal(a,b,dur,f1,f2,vol,rough){if(!AC||muted)return;const t=AC.currentT
  const lfo=AC.createOscillator(),lg=AC.createGain();lfo.frequency.value=20+Math.random()*12;lg.gain.value=a*.06*(rough||1);lfo.connect(lg);lg.connect(o.frequency);lfo.start(t);lfo.stop(t+dur+.05);
  src.gain.value=.7;s2.gain.value=.35;o.connect(src);o2.connect(s2);s2.connect(src);
  [[f1,1],[f2,.6]].forEach(([f,gn])=>{const bp=AC.createBiquadFilter(),gg=AC.createGain();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=4.5;gg.gain.value=gn;src.connect(bp);bp.connect(gg);gg.connect(g)});
- g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+dur);g.connect(master);o.start(t);o2.start(t);o.stop(t+dur+.05);o2.stop(t+dur+.05);noise(Math.min(.12,dur),vol*.3,900)}
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol*6.5,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+dur);g.connect(master);o.start(t);o2.start(t);o.stop(t+dur+.05);o2.stop(t+dur+.05);noise(Math.min(.14,dur),vol*.5,700)}
 const SFX={
  shot(){tone(2100,240,.17,'sawtooth',.16);tone(1050,110,.24,'sine',.26);tone(420,60,.16,'square',.12);noise(.07,.22,3500);tone(300,1500,.035,'triangle',.12)},   // zumbido de plasma
  grunt(k){if(k==='att')vocal(150,100,.16,650,1150,.5,1);else if(k==='jump'){if(Math.random()<.6)vocal(170,125,.13,520,1000,.42,1)}else if(k==='dash')vocal(135,85,.32,700,1200,.55,1.3);else if(k==='hurt')vocal(230,85,.4,800,1400,.7,2);else if(k==='die')vocal(190,45,1,700,1100,.7,2.5);else if(k==='win')vocal(120,150,.45,600,1000,.6,1)},
@@ -76,7 +76,7 @@ function scream(){tone(190,55,.6,'sawtooth',.28);tone(95,45,.6,'square',.12)}
  if('ontouchstart' in window)addEventListener('pointerdown',()=>{if(!document.fullscreenElement&&!document.webkitFullscreenElement)tog()},{once:true})})();
 document.getElementById('mute').onclick=e=>{muted=!muted;e.target.textContent=muted?'🔇':'🔊';if(master)master.gain.value=muted?0:.5;if(muted&&window.speechSynthesis)speechSynthesis.cancel()};
 // ---------- entrada ----------
-const K={};const keymap={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowDown:'d',s:'d',ArrowUp:'u',w:'u',' ':'j',z:'j',k:'j',x:'f',j:'f',c:'t',l:'t',Shift:'t',h:'h',m:'m',v:'v',r:'rs'};
+const K={};const keymap={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowDown:'d',s:'d',ArrowUp:'u',w:'u',' ':'j',z:'j',k:'j',x:'f',j:'f',c:'t',l:'t',Shift:'t',h:'h',m:'m',r:'rs'};
 const pressed={};
 addEventListener('keydown',e=>{audio();const k=keymap[e.key.length>1?e.key:e.key.toLowerCase()];if(k){K[k]=1;if(!pressed[k]){pressed[k]=1;edge(k)}e.preventDefault()}});
 addEventListener('keyup',e=>{const k=keymap[e.key.length>1?e.key:e.key.toLowerCase()];if(k){K[k]=0;pressed[k]=0}});
@@ -184,7 +184,7 @@ function shoot(){
 }
 // ---------- dibujo (optimizado: capas pre-escaladas, texturas de luz y resolución interna limitada) ----------
 const cv=document.getElementById('c'),cx=cv.getContext('2d',{alpha:false});let kk=1,cam=0,VW=640;
-const RS=1.5;   // píxeles internos por unidad lógica: tope de resolución para que vaya fluido, también en pantalla completa
+const RS=2;   // píxeles internos por unidad lógica: tope de resolución para que vaya fluido, también en pantalla completa
 const FG=new Image();FG.src='img/bg/primer_plano.jpg';const FGP=1.3,FGW=1747.5;      // primer plano: parallax 1.3
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
 let BGc=null,FGc=null,VIG=null;
@@ -202,15 +202,15 @@ function fit(){const w=innerWidth,h=innerHeight;VW=Math.max(640,Math.min(860,w/h
  VIG=mk(cv.width,cv.height);{const g=VIG.getContext('2d'),gr=g.createRadialGradient(VW/2*RS,GH*.55*RS,GH*.45*RS,VW/2*RS,GH*.55*RS,Math.max(GH*1.1,VW*.6)*RS);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,10,6,.45)');g.fillStyle=gr;g.fillRect(0,0,VIG.width,VIG.height)}
  document.getElementById('rot').style.display=(h>w&&document.body.classList.contains('touch'))?'flex':'none'}
 addEventListener('resize',fit);fit();
-function spr(n,x,y,dir,alpha){const m=SPR[n],im=IMG[n];if(!im.complete)return;cx.save();cx.globalAlpha=alpha==null?1:alpha;cx.translate(x,y);cx.scale(dir,1);
+function spr(n,x,y,dir,alpha){const m=SPR[n],im=IMG[n];if(!im.complete)return;cx.save();cx.imageSmoothingQuality='high';cx.globalAlpha=alpha==null?1:alpha;cx.translate(x,y);cx.scale(dir,1);
  const k=SC*(m.sc||1)/(m.z||1);cx.drawImage(im,-m.cx*k,-m.by*k,m.w*k,m.h*k);cx.restore()}
 function sprTint(n,x,y,dir,alpha){const m=SPR[n],im=IMG[n];if(!im.complete||!im.naturalWidth)return;const k=SC*(m.sc||1)/(m.z||1),W=Math.ceil(m.w*k*kk),H=Math.ceil(m.h*k*kk);
  if(tcv.width<W||tcv.height<H){tcv.width=Math.max(tcv.width,W);tcv.height=Math.max(tcv.height,H)}else tcx.clearRect(0,0,W,H);
- tcx.globalCompositeOperation='source-over';tcx.drawImage(im,0,0,W,H);
+ tcx.globalCompositeOperation='source-over';tcx.imageSmoothingQuality='high';tcx.drawImage(im,0,0,W,H);
  tcx.globalCompositeOperation='source-atop';tcx.fillStyle='rgba(26,92,70,.20)';tcx.fillRect(0,0,W,H);
  const gl=P.glow||0;if(gl>.02){tcx.fillStyle='rgba(95,180,255,'+(.40*gl)+')';tcx.fillRect(0,0,W,H);const rg=tcx.createLinearGradient(W*(dir>0?1:0),0,W*(dir>0?.35:.65),0);rg.addColorStop(0,'rgba(170,225,255,'+(.45*gl)+')');rg.addColorStop(1,'rgba(170,225,255,0)');tcx.fillStyle=rg;tcx.fillRect(0,0,W,H)}
  const g=tcx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(190,255,200,.10)');g.addColorStop(1,'rgba(0,20,10,.22)');tcx.fillStyle=g;tcx.fillRect(0,0,W,H);tcx.globalCompositeOperation='source-over';
- cx.save();cx.globalAlpha=alpha==null?1:alpha;cx.translate(x,y);cx.scale(dir,1);cx.drawImage(tcv,0,0,W,H,-m.cx*k,-m.by*k,W/kk,H/kk);cx.restore()}
+ cx.save();cx.imageSmoothingQuality='high';cx.globalAlpha=alpha==null?1:alpha;cx.translate(x,y);cx.scale(dir,1);cx.drawImage(tcv,0,0,W,H,-m.cx*k,-m.by*k,W/kk,H/kk);cx.restore()}
 function frame(){const a=AN[P.state]||AN.idle,i=a[2]?Math.floor((P.ft||0)*a[1])%a[0].length:0;return a[0][i]}
 function draw(){
  if(!BGc||!FGc)prep();
@@ -249,7 +249,7 @@ function draw(){
  cx.fillText('SOLDADOS DE ALTA ELITE · '+VERSION,10,18);
  for(let i=0;i<5;i++){cx.fillStyle=i<P.hp?'#e04040':'#444';cx.fillRect(10+i*18,26,14,12)}
  cx.fillStyle='#ddd';cx.font='11px Arial';cx.fillText('Estado: '+P.state+(P.canDash?'  ⚡ impulso listo':'  ⚡ recargando (toca suelo)'),10,54);
- if(!document.body.classList.contains('touch')){cx.fillText('◀▶/A D mover · ▼/S agachar · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · V victoria · R reiniciar · M sonido',10,GH-8)}
+ if(!document.body.classList.contains('touch')){cx.fillText('◀▶/A D mover · ▼/S agachar · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · R reiniciar · M sonido',10,GH-8)}
  if(P.dead){cx.fillStyle='#000a';cx.fillRect(0,130,VW,80);cx.fillStyle='#fff';cx.font='bold 26px Arial';cx.textAlign='center';cx.fillText('MISIÓN FALLIDA',VW/2,172);cx.font='13px Arial';cx.fillText('Pulsa R o salta para reiniciar',VW/2,196)}
 }
 let last=performance.now(),started=false;
