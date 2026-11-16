@@ -27,8 +27,10 @@ body.touch #knob{display:block}
 <div class="b" id="bF" style="right:calc(112px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px;font-size:13px">FUEGO</div>
 <div class="b" id="bT" style="right:calc(68px + env(safe-area-inset-right));bottom:calc(118px + env(safe-area-inset-bottom));width:76px;height:76px;font-size:26px">⚡</div>
 <script src="spr.js"></script>
+<script src="local/ocula.js"></script>
+<script src="vigia.js"></script>
 <script>
-const VERSION='demo técnica v13';
+const VERSION='demo técnica v15';
 // ---------- sprites ----------
 const NAMES=Object.keys(SPR),IMG={};let loaded=0;
 NAMES.forEach(n=>{const i=new Image();i.onload=()=>{loaded++};i.src='img/spr/'+n+'.webp';IMG[n]=i});
@@ -105,13 +107,45 @@ const FLOOR=gY(80);
 const BG=new Image();BG.src='img/bg/bosque.jpg';
 const PLAT=[{x:260,y:230,w:120},{x:470,y:175,w:120},{x:680,y:230,w:140},{x:900,y:170,w:150}];
 const SOLID=PLAT.map(p=>({x:p.x,y:p.y,w:p.w,h:10,oneway:1}));
-const TARGETS=[560,860,1100].map(x=>({x,y:gY(x)-34*PS,hp:3}));
+const TARGETS=(window.OCULA||window.VIGIA)?[]:[560,860,1100].map(x=>({x,y:gY(x)-34*PS,hp:3}));
 // luciérnagas (partículas del motor)
 const FLY=Array.from({length:42},(_,i)=>({x:Math.random()*GW,y:80+Math.random()*230,ph:Math.random()*6.3,sp:.4+Math.random()*.9,r:1.2+Math.random()*1.8}));
-const tcv=document.createElement('canvas'),tcx=tcv.getContext('2d');
+const tcv=document.createElement('canvas'),tcx=tcv.getContext('2d'),ecv=document.createElement('canvas'),ecx=ecv.getContext('2d');
 // ---------- jugador ----------
 const P={x:80,y:FLOOR,vx:0,vy:0,dir:1,on:true,crouch:0,fire:0,flash:0,dash:0,dashCd:0,canDash:1,hp:5,inv:0,hurt:0,dead:0,win:0,t:0,stepT:0,coyote:0,state:'idle',fcount:0};
 const BU=[],PART=[],GHO=[];let ghT=0;
+// ---------- enemigo local: Ocula (solo en casa; la carpeta local\ no se sube a git) ----------
+const OC=window.OCULA||window.VIGIA,EN=[],ENIMG={};      // en casa sale Ocula (local); en la web pública, el Vigía original
+if(OC){Object.keys(OC.fr).forEach(n=>{const i=new Image();i.src=OC.base+n+'.webp';ENIMG[n]=i});
+ [640,900,1090].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:8,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}))}
+const OC_FPS=7,OC_SPD=34;
+function enFrame(e){switch(e.mode){case 'walk':return 'ow'+(Math.floor(e.t*OC_FPS)%8);case 'closing':return e.mt<.12?'es1':'es2';case 'closed':return 'es2';case 'opening':return e.mt<.12?'es3':'es0';case 'wind':return 'es4';case 'strike':return 'es5';case 'recover':return 'es0';case 'hurt':return 'es6';case 'dead':return 'es7'}return 'es0'}
+const enOpen=e=>!(e.mode==='closing'&&e.mt>=.12)&&e.mode!=='closed'&&e.mode!=='hurt'&&e.mode!=='dead';     // solo es vulnerable con el ojo abierto
+function enemyStep(dt){
+ EN.forEach(e=>{if(e.mode==='dead'){e.mt+=dt;if(e.mt>3)e.fade=Math.max(0,1-(e.mt-3));return}
+  e.t+=dt;e.mt+=dt;e.hit=Math.max(0,e.hit-dt);const dx=P.x-e.x,ad=Math.abs(dx);
+  if(e.mode==='walk'){
+   if(ad<340&&!P.dead){e.dir=dx>0?1:-1}else{if(e.x>e.sx+110)e.dir=-1;else if(e.x<e.sx-110)e.dir=1}
+   e.x+=e.dir*OC_SPD*(ad<340?1.3:.8)*dt;e.x=Math.max(30,Math.min(GW-30,e.x));e.y=gY(e.x);e.open-=dt;
+   if(ad<70&&!P.dead&&e.mt>.5){e.mode='wind';e.mt=0}else if(e.open<=0){e.mode='closing';e.mt=0}
+  }else if(e.mode==='closing'){if(e.mt>.26){e.mode='closed';e.mt=0}}
+  else if(e.mode==='closed'){if(e.mt>1.5){e.mode='opening';e.mt=0}}
+  else if(e.mode==='opening'){if(e.mt>.26){e.mode='walk';e.mt=0;e.open=2.2+Math.random()*1.6}}
+  else if(e.mode==='wind'){if(e.mt>.35){e.mode='strike';e.mt=0}}
+  else if(e.mode==='strike'){const reach=e.mt<.2?115:0;
+   if(reach&&Math.abs(P.x-(e.x+e.dir*reach*.5))<reach*.5+10*PS&&P.y>e.y-70&&P.y<e.y+12&&P.inv<=0&&!P.dead)hurtMe();
+   if(e.mt>.22){e.mode='recover';e.mt=0}}
+  else if(e.mode==='recover'){if(e.mt>.55){e.mode='walk';e.mt=0}}
+  else if(e.mode==='hurt'){if(e.mt>.3){e.mode='closing';e.mt=0}}
+  if(!P.dead&&P.inv<=0&&ad<24&&Math.abs(P.y-e.y)<36&&e.mode!=='dead')hurtMe()});
+ for(let i=BU.length-1;i>=0;i--){const b=BU[i];
+  for(const e of EN){if(e.mode==='dead')continue;
+   if(!(Math.abs(b.x-e.x)<(e.mode==='strike'?36:20)&&b.y>e.y-OC.h&&b.y<e.y+4))continue;
+   BU.splice(i,1);
+   if(enOpen(e)){const head=b.y<e.y-OC.h*.55;e.hp-=head?2:1;e.hit=.12;noise(.1,.3,900);if(e.hp<=0){e.mode='dead';e.mt=0;SFX.die()}else{e.mode='hurt';e.mt=0}}
+   else tone(1700,900,.06,'square',.12);      // rebota: tiene el ojo cerrado
+   break}}
+}
 function hurtMe(){if(P.inv>0||P.dead)return;P.hp--;P.inv=1.2;P.hurt=.45;P.vx=-P.dir*140;P.vy=-180;P.on=false;SFX.hurt();scream();VOZ.dolor();if(P.hp<=0){P.dead=1;P.vx=-P.dir*60;SFX.die();VOZ.muerte()}}
 function respawn(){Object.assign(P,{x:80,y:FLOOR,vx:0,vy:0,hp:5,inv:1,hurt:0,dead:0,win:0,dash:0});TARGETS.forEach(t=>t.hp=3)}
 const AIMV=[[1,0],[.707,-.707],[.25,-.97],[.707,.707],[.3,.95]];
@@ -172,6 +206,7 @@ function step(dt){
  else if(Math.abs(P.vx)>20)s='run';
 
  if(s!==P.state){P.state=s;P.ft=0}else P.ft=(P.ft||0)+dt;
+ if(OC)enemyStep(dt);
 }
 function shoot(){
  P.fire=.16;P.flash=.09;P.shotN=(P.shotN||0)+1;SFX.shot();VOZ.ataque();P.glow=1;
@@ -223,6 +258,14 @@ function draw(){
  PLAT.forEach(p=>{cx.fillStyle='#12261d';cx.fillRect(p.x,p.y,p.w,10);cx.fillStyle='#5f8f45';cx.fillRect(p.x,p.y,p.w,2.5)});
  // dianas (marcadores)
  TARGETS.forEach(t=>{if(t.hp<=0)return;cx.fillStyle=t.hit>0?'#fff':'#b04030';cx.fillRect(t.x-10*PS,t.y,20*PS,34*PS);cx.fillStyle='#fff';cx.font='10px Arial';cx.textAlign='center';cx.fillText('DIANA',t.x,t.y-4)});
+ // enemigos (Ocula, solo en casa)
+ EN.forEach(e=>{const n=enFrame(e),m=OC.fr[n],im=ENIMG[n];if(!im||!im.complete||!im.naturalWidth)return;const k=OC.sc,W=Math.ceil(m.w*k*kk),H=Math.ceil(m.h*k*kk);
+  if(ecv.width<W||ecv.height<H){ecv.width=Math.max(ecv.width,W);ecv.height=Math.max(ecv.height,H)}else ecx.clearRect(0,0,W,H);
+  ecx.globalCompositeOperation='source-over';ecx.imageSmoothingQuality='high';ecx.drawImage(im,0,0,W,H);
+  ecx.globalCompositeOperation='source-atop';ecx.fillStyle='rgba(26,92,70,.20)';ecx.fillRect(0,0,W,H);
+  if(e.hit>0){ecx.fillStyle='rgba(255,255,255,'+(.7*e.hit/.12)+')';ecx.fillRect(0,0,W,H)}
+  const g=ecx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(190,255,200,.08)');g.addColorStop(1,'rgba(0,20,10,.2)');ecx.fillStyle=g;ecx.fillRect(0,0,W,H);ecx.globalCompositeOperation='source-over';
+  cx.save();cx.globalAlpha=e.fade;cx.translate(e.x,e.y);cx.fillStyle='rgba(0,12,8,.3)';cx.beginPath();cx.ellipse(0,1,24,4,0,0,7);cx.fill();cx.scale(e.dir,1);cx.imageSmoothingQuality='high';cx.drawImage(ecv,0,0,W,H,-m.cx*k,-m.by*k,W/kk,H/kk);cx.restore()});
  // estelas del impulso
  GHO.forEach(g=>spr(g.n,g.x,g.y,g.d,g.a*g.l/g.L));
  // soldado
