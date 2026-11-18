@@ -196,8 +196,8 @@ function step(dt){
   for(const t of TARGETS)if(t.hp>0&&Math.abs(b.x-t.x)<14&&b.y>t.y-8&&b.y<t.y+40){t.hp--;t.hit=.12;hit=true;noise(.1,.3,900);if(t.hp<=0)SFX.win&&tone(200,60,.3,'square',.2)}
   if(hit)BU.splice(i,1)}
  // granadas de plasma: arco, rebote en el suelo, explotan al tocar enemigo, al 2º rebote o a los 2 s
- for(let i=GR.length-1;i>=0;i--){const g=GR[i];g.vy+=1100*dt;g.x+=g.vx*dt;g.y+=g.vy*dt;g.l-=dt;let boom=g.l<=0;
-  const gy=gY(g.x);if(g.vy>0&&g.y>=gy){g.y=gy;g.vy=-g.vy*.4;g.vx*=.6;g.b++;noise(.05,.15,1500);if(g.b>=2)boom=true}
+ for(let i=GR.length-1;i>=0;i--){const g=GR[i];if(!g.f)g.vy+=1100*dt;g.x+=g.vx*dt;g.y+=g.vy*dt;g.l-=dt;let boom=g.l<=0;
+  const gy=gY(g.x);if(g.f){if(g.y>=gy-3)boom=true}else if(g.vy>0&&g.y>=gy){g.y=gy;g.vy=-g.vy*.4;g.vx*=.6;g.b++;noise(.05,.15,1500);if(g.b>=2)boom=true}
   if(!boom&&OC)for(const e of EN)if(e.mode!=='dead'&&Math.abs(g.x-e.x)<28&&g.y>e.y-OC.h&&g.y<e.y+6){boom=true;break}
   if(!boom)for(const t of TARGETS)if(t.hp>0&&Math.abs(g.x-t.x)<18&&g.y>t.y-8&&g.y<t.y+40){boom=true;break}
   if(boom){explode(g.x,g.y);GR.splice(i,1)}}
@@ -228,15 +228,15 @@ function explode(x,y){
  if(OC)EN.forEach(e=>{if(e.mode==='dead')return;if(Math.hypot(e.x-x,e.y-OC.h*.5-y)>R+16)return;
   if(enOpen(e)){e.hp-=3;e.hit=.12;if(e.hp<=0){e.mode='dead';e.mt=0;SFX.die()}else{e.mode='hurt';e.mt=0}}else tone(1700,900,.06,'square',.12)});
  TARGETS.forEach(t=>{if(t.hp>0&&Math.hypot(t.x-x,t.y+16-y)<R+14){t.hp-=2;t.hit=.12;if(t.hp<=0)tone(200,60,.3,'square',.2)}})}
-function lobGrenade(mx,my){
- const up=P.aim>0;GR.push({x:mx,y:my,vx:P.dir*(up?210:270),vy:up?-640:-420,l:2,b:0});tone(500,220,.12,'triangle',.18)}
+function chargedShot(mx,my,ax,ay){   // plasma cargado: sale recto de la punta del cañón, grande y lento, explota al tocar algo
+ GR.push({x:mx,y:my,vx:ax*P.dir*430,vy:ay*430,l:1.3,b:0,f:1});tone(260,520,.22,'sawtooth',.2);tone(90,180,.3,'sine',.25)}
 function shoot(){
  P.fire=P.crouch?.6:.16;P.flash=.09;P.shotN=(P.shotN||0)+1;SFX.shot();VOZ.ataque();P.glow=1;
  // fotograma que se mostrará al apuntar: de él salen la punta del cañón y el ángulo real del fusil
  let fr=frame();if(P.aim>0&&P.state!=='runu')fr=P.crouch?'a1_6':['a1_0','a1_1','a1_2','a1_3','a1_4'][P.aim];else if(P.crouch)fr='a1_5';
  const m=SPR[fr],kz=SC*(m.sc||1)/(m.z||1),mx=P.x+P.dir*(m.tx-m.cx)*kz,my=P.y-(m.by-m.ty)*kz;
  let ax=1,ay=0;if(P.aim>0&&m.ax!==undefined){ax=m.ax;ay=m.ay}   // solo al apuntar se usa el ángulo medido del fusil; en carrera, horizontal
- if(P.crouch){lobGrenade(mx,my);PART.push({x:mx,y:my,l:.1,L:.1,v:1});return}   // agachado: granada de plasma
+ if(P.crouch){chargedShot(mx,my,ax,ay);PART.push({x:mx,y:my,l:.14,L:.14,v:1});return}   // agachado: plasma cargado
  BU.push({x:mx,y:my,vx:ax*P.dir*700,vy:ay*700,l:1.0,d:P.dir});
  PART.push({x:mx,y:my,l:.1,L:.1,v:1})
 }
@@ -328,7 +328,7 @@ function draw(){
  for(let i=0;i<Math.ceil(GW/300);i++){const rx=140+i*300+Math.sin(T*.25+i*2)*40;cx.globalAlpha=Math.max(0,.045+.03*Math.sin(T*.4+i*1.7));cx.drawImage(TEX_RAY,rx-110,0)}
  {const L=(x,y,r,a)=>{cx.globalAlpha=Math.min(1,a);cx.drawImage(TEX_BLUE,x-r,y-r,r*2,r*2)};
   BU.forEach(b=>L(b.x,b.y,52,.30));
-  GR.forEach(g=>{L(g.x,g.y,34,.9);cx.globalAlpha=1;cx.fillStyle='#eaf8ff';cx.beginPath();cx.arc(g.x,g.y,3.2,0,7);cx.fill()});
+  GR.forEach(g=>{const pz=1+.12*Math.sin(T*30);L(g.x-g.vx*.02,g.y-g.vy*.02,40*pz,.5);L(g.x,g.y,52*pz,.9);cx.globalAlpha=1;cx.fillStyle='#eaf8ff';cx.beginPath();cx.arc(g.x,g.y,6*pz,0,7);cx.fill()});
   EXP.forEach(x=>{const p=1-x.l/x.L;L(x.x,x.y,40+p*95,(1-p)*.9);cx.globalAlpha=(1-p)*.8;cx.strokeStyle='#9fdcff';cx.lineWidth=3*(1-p)+.5;cx.beginPath();cx.arc(x.x,x.y,10+p*80,0,7);cx.stroke()});PART.forEach(p=>{if(p.v===1)L(p.x,p.y,48,.7*(p.l/p.L))});if((P.glow||0)>.03)L(P.x,P.y-42,160,.28*P.glow)}
  FLY.forEach(f=>{const px=f.x+Math.sin(T*f.sp+f.ph)*22,py=f.y+Math.cos(T*f.sp*.8+f.ph)*14,al=.35+.5*Math.sin(T*1.6+f.ph);if(al<=0)return;cx.globalAlpha=Math.min(1,al);cx.drawImage(TEX_FLY,px-f.r*5,py-f.r*5,f.r*10,f.r*10)});
  cx.globalCompositeOperation='source-over';cx.globalAlpha=1;
@@ -340,7 +340,7 @@ function draw(){
  cx.fillText('SOLDADOS DE ALTA ELITE · '+VERSION,10,18);
  for(let i=0;i<5;i++){cx.fillStyle=i<P.hp?'#e04040':'#444';cx.fillRect(10+i*18,26,14,12)}
  cx.fillStyle='#ddd';cx.font='11px Arial';cx.fillText('Estado: '+P.state+(P.canDash?'  ⚡ impulso listo':'  ⚡ recargando (toca suelo)'),10,54);
- if(!document.body.classList.contains('touch')){cx.fillText('◀▶/A D mover · ▼/S agachar (+fuego = granada) · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · R reiniciar · M sonido',10,GH-8)}
+ if(!document.body.classList.contains('touch')){cx.fillText('◀▶/A D mover · ▼/S agachar (+fuego = plasma cargado) · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · R reiniciar · M sonido',10,GH-8)}
  if(P.dead){cx.fillStyle='#000a';cx.fillRect(0,130,VW,80);cx.fillStyle='#fff';cx.font='bold 26px Arial';cx.textAlign='center';cx.fillText('MISIÓN FALLIDA',VW/2,172);cx.font='13px Arial';cx.fillText('Pulsa R o salta para reiniciar',VW/2,196)}
 }
 let last=performance.now(),started=false;
