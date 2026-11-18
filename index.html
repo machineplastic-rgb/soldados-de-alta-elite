@@ -30,7 +30,7 @@ body.touch #knob{display:block}
 <script src="local/ocula.js"></script>
 <script src="vigia.js"></script>
 <script>
-const VERSION='demo técnica v18';
+const VERSION='demo técnica v19';
 // ---------- sprites ----------
 const NAMES=Object.keys(SPR),IMG={};let loaded=0;
 NAMES.forEach(n=>{const i=new Image();i.onload=()=>{loaded++};i.src='img/spr/'+n+'.webp';IMG[n]=i});
@@ -100,12 +100,15 @@ Object.keys(touchMap).forEach(id=>{const el=document.getElementById(id),k=touchM
  const dn=e=>{e.preventDefault();audio();K[k]=1;el.classList.add('on');edge(k)},up=e=>{e.preventDefault();K[k]=0;pressed[k]=0;el.classList.remove('on')};
  el.addEventListener('pointerdown',dn);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up)});
 // ---------- mundo: bosque encantado (2 tramos unidos) ----------
-const GW=2228,GH=360;
+const GW=4340,GH=360,GEND=4290;   // GEND: el soldado no pasa de la boca de la cueva (fin de la demo, "continuará")
 // camino BAJO (suelo, medido sobre bosque.jpg) y camino ALTO (tronco caído del tramo 3, se sube saltando desde el suelo; abajo + salto = bajar)
-const TERR=[[0,226],[100,228],[150,238],[200,250],[250,262],[300,276],[340,291],[450,293],[520,291],[580,270],[640,248],[720,242],[745,262],[775,280],[850,284],[880,292],[1000,292],[1050,288],[1100,285],[1180,286],[1300,296],[1400,294],[1440,276],[1480,264],[1530,254],[1600,262],[1690,266],[1710,258],[1760,254],[1830,256],[1900,250],[1940,248],[1990,248],[2060,255],[2130,262],[2228,262]];
+const TERR=[[0,226],[100,228],[150,238],[200,250],[250,262],[300,276],[340,291],[450,293],[520,291],[580,270],[640,248],[720,242],[745,262],[775,280],[850,284],[880,292],[1000,292],[1050,288],[1100,285],[1180,286],[1300,296],[1400,294],[1440,276],[1480,264],[1530,254],[1600,262],[1690,266],[1710,258],[1760,254],[1830,256],[1900,250],[1940,248],[1990,248],[2060,255],[2130,262],[2228,262],
+ [2290,274],[2340,282],[2500,284],[2600,285],[2680,288],[2760,298],[2850,303],[3000,304],[3300,305],[3500,303],[3620,300],[3700,296],[3800,291],[3900,289],[4100,286],[4200,284],[4340,284]];   // v19: copas, poblado en sombras (x2) y entrada a la cueva
 const HIGH=[[1130,252],[1200,215],[1250,188],[1300,166],[1350,152],[1450,148],[1505,152]];
+const HIGH2=[[2290,228],[2330,208],[2360,200],[2440,204],[2500,200],[2540,190],[2580,178]];   // tronco caído de las copas (camino alto)
+const HIGH3=[[2850,204],[2930,218],[3005,234]];                                                 // pasarela de cuerda del poblado
 function ly(pts,x){if(x<pts[0][0]||x>pts[pts.length-1][0])return null;for(let i=1;i<pts.length;i++)if(x<=pts[i][0]){const a=pts[i-1],b=pts[i],t=(x-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*t}return pts[pts.length-1][1]}
-const SURF=[{pts:TERR,one:false},{pts:HIGH,one:true}];
+const SURF=[{pts:TERR,one:false},{pts:HIGH,one:true},{pts:HIGH2,one:true},{pts:HIGH3,one:true}];
 function gY(x){if(x<=TERR[0][0])return TERR[0][1];for(let i=1;i<TERR.length;i++)if(x<=TERR[i][0]){const a=TERR[i-1],b=TERR[i],t=(x-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*t}return TERR[TERR.length-1][1]}
 const FLOOR=gY(80);
 const BG=new Image();BG.src='img/bg/bosque.jpg';
@@ -119,9 +122,13 @@ const tcv=document.createElement('canvas'),tcx=tcv.getContext('2d'),ecv=document
 const P={x:80,y:FLOOR,vx:0,vy:0,dir:1,on:true,crouch:0,fire:0,flash:0,dash:0,dashCd:0,canDash:1,hp:5,inv:0,hurt:0,dead:0,win:0,t:0,stepT:0,coyote:0,state:'idle',fcount:0};
 const BU=[],PART=[],GHO=[],GR=[],EXP=[];let ghT=0;   // GR = granadas de plasma (disparo agachado), EXP = explosioneslet ghT=0;
 // ---------- enemigo local: Ocula (solo en casa; la carpeta local\ no se sube a git) ----------
-const OC=window.OCULA||window.VIGIA,EN=[],ENIMG={};      // en casa sale Ocula (local); en la web pública, el Vigía original
+const OC=window.OCULA||window.VIGIA,EN=[],ENIMG={},ENIMG2={};      // en casa sale Ocula (local); en la web pública, el Vigía original
+const ET=e=>(e.beige&&window.VIGIA)?window.VIGIA:OC;                    // tipo de cada enemigo: los beige siempre son el Vigía repintado
 if(OC){Object.keys(OC.fr).forEach(n=>{const i=new Image();i.src=OC.base+n+'.webp';ENIMG[n]=i});
- [640,900,1380,1650,2020].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:8,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}))}
+ if(window.VIGIA)Object.keys(window.VIGIA.fr).forEach(n=>{const i=new Image();i.src='img/vigia2/'+n+'.webp';ENIMG2[n]=i});
+ [640,900,1380,1650,2020].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:8,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}));
+ // v19: habitantes beige claro del poblado (salen de los tipis, de las sombras) y uno en las copas
+ [2380,2820,3000,3140,3335,3560,3800].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:6,beige:1,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}))}
 const OC_FPS=7,OC_SPD=34;
 function enFrame(e){switch(e.mode){case 'walk':return 'ow'+(Math.floor(e.t*OC_FPS)%8);case 'closing':return e.mt<.12?'es1':'es2';case 'closed':return 'es2';case 'opening':return e.mt<.12?'es3':'es0';case 'wind':return 'es4';case 'strike':return 'es5';case 'recover':return 'es0';case 'hurt':return 'es6';case 'dead':return 'es7'}return 'es0'}
 const enOpen=e=>!(e.mode==='closing'&&e.mt>=.12)&&e.mode!=='closed'&&e.mode!=='hurt'&&e.mode!=='dead';     // solo es vulnerable con el ojo abierto
@@ -144,9 +151,9 @@ function enemyStep(dt){
   if(!P.dead&&P.inv<=0&&ad<24&&Math.abs(P.y-e.y)<36&&e.mode!=='dead')hurtMe()});
  for(let i=BU.length-1;i>=0;i--){const b=BU[i];
   for(const e of EN){if(e.mode==='dead')continue;
-   if(!(Math.abs(b.x-e.x)<(e.mode==='strike'?36:20)&&b.y>e.y-OC.h&&b.y<e.y+4))continue;
+   if(!(Math.abs(b.x-e.x)<(e.mode==='strike'?36:20)&&b.y>e.y-ET(e).h&&b.y<e.y+4))continue;
    BU.splice(i,1);
-   if(enOpen(e)){const head=b.y<e.y-OC.h*.55;e.hp-=head?2:1;e.hit=.12;noise(.1,.3,900);if(e.hp<=0){e.mode='dead';e.mt=0;SFX.die()}else{e.mode='hurt';e.mt=0}}
+   if(enOpen(e)){const head=b.y<e.y-ET(e).h*.55;e.hp-=head?2:1;e.hit=.12;noise(.1,.3,900);if(e.hp<=0){e.mode='dead';e.mt=0;SFX.die()}else{e.mode='hurt';e.mt=0}}
    else tone(1700,900,.06,'square',.12);      // rebota: tiene el ojo cerrado
    break}}
 }
@@ -178,7 +185,7 @@ function step(dt){
  else P.vy+=G*dt;
  if(P.vy>700)P.vy=700;
  // mover X
- P.x+=P.vx*dt;P.x=Math.max(14*PS,Math.min(GW-14*PS,P.x));
+ P.x+=P.vx*dt;P.x=Math.max(14*PS,Math.min(GEND,P.x));
  // mover Y + suelo / plataformas
  const oy=P.y;P.y+=P.vy*dt;const was=P.on;P.on=false;
  if(P.vy>=0){
@@ -198,7 +205,7 @@ function step(dt){
  // granadas de plasma: arco, rebote en el suelo, explotan al tocar enemigo, al 2º rebote o a los 2 s
  for(let i=GR.length-1;i>=0;i--){const g=GR[i];if(!g.f)g.vy+=1100*dt;g.x+=g.vx*dt;g.y+=g.vy*dt;g.l-=dt;let boom=g.l<=0;
   const gy=gY(g.x);if(g.f){if(g.y>=gy-3)boom=true}else if(g.vy>0&&g.y>=gy){g.y=gy;g.vy=-g.vy*.4;g.vx*=.6;g.b++;noise(.05,.15,1500);if(g.b>=2)boom=true}
-  if(!boom&&OC)for(const e of EN)if(e.mode!=='dead'&&Math.abs(g.x-e.x)<28&&g.y>e.y-OC.h&&g.y<e.y+6){boom=true;break}
+  if(!boom&&OC)for(const e of EN)if(e.mode!=='dead'&&Math.abs(g.x-e.x)<28&&g.y>e.y-ET(e).h&&g.y<e.y+6){boom=true;break}
   if(!boom)for(const t of TARGETS)if(t.hp>0&&Math.abs(g.x-t.x)<18&&g.y>t.y-8&&g.y<t.y+40){boom=true;break}
   if(boom){explode(g.x,g.y);GR.splice(i,1)}}
  for(let i=EXP.length-1;i>=0;i--){EXP[i].l-=dt;if(EXP[i].l<=0)EXP.splice(i,1)}
@@ -225,7 +232,7 @@ function step(dt){
 }
 function explode(x,y){
  const R=78;EXP.push({x,y,l:.55,L:.55});tone(130,30,.45,'sawtooth',.32);tone(900,200,.2,'sine',.12);noise(.4,.45,250);
- if(OC)EN.forEach(e=>{if(e.mode==='dead')return;if(Math.hypot(e.x-x,e.y-OC.h*.5-y)>R+16)return;
+ if(OC)EN.forEach(e=>{if(e.mode==='dead')return;if(Math.hypot(e.x-x,e.y-ET(e).h*.5-y)>R+16)return;
   if(enOpen(e)){e.hp-=3;e.hit=.12;if(e.hp<=0){e.mode='dead';e.mt=0;SFX.die()}else{e.mode='hurt';e.mt=0}}else tone(1700,900,.06,'square',.12)});
  TARGETS.forEach(t=>{if(t.hp>0&&Math.hypot(t.x-x,t.y+16-y)<R+14){t.hp-=2;t.hit=.12;if(t.hp<=0)tone(200,60,.3,'square',.2)}})}
 function chargedShot(mx,my,ax,ay){   // plasma cargado: sale recto de la punta del cañón, grande y lento, explota al tocar algo
@@ -243,7 +250,7 @@ function shoot(){
 // ---------- dibujo (optimizado: capas pre-escaladas, texturas de luz y resolución interna limitada) ----------
 const cv=document.getElementById('c'),cx=cv.getContext('2d',{alpha:false});let kk=1,cam=0,VW=640;
 const RS=2;   // píxeles internos por unidad lógica: tope de resolución para que vaya fluido, también en pantalla completa
-const FG=new Image();FG.src='img/bg/primer_plano.jpg';const FGP=1.3,FGW=2850;      // primer plano: parallax 1.3
+const FG=new Image();FG.src='img/bg/primer_plano.jpg';const FGP=1.3,FGW=5606;      // primer plano: parallax 1.3
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
 let BGc=null,FGc=null,VIG=null;
 const glowTex=(r,g,b,stops)=>{const c=mk(128,128),x=c.getContext('2d'),gr=x.createRadialGradient(64,64,0,64,64,64);stops.forEach(t=>gr.addColorStop(t[0],'rgba('+r+','+g+','+b+','+t[1]+')'));x.fillStyle=gr;x.fillRect(0,0,128,128);return c};
@@ -304,7 +311,7 @@ function draw(){
  // dianas (marcadores)
  TARGETS.forEach(t=>{if(t.hp<=0)return;cx.fillStyle=t.hit>0?'#fff':'#b04030';cx.fillRect(t.x-10*PS,t.y,20*PS,34*PS);cx.fillStyle='#fff';cx.font='10px Arial';cx.textAlign='center';cx.fillText('DIANA',t.x,t.y-4)});
  // enemigos (Ocula, solo en casa)
- EN.forEach(e=>{const n=enFrame(e),m=OC.fr[n],im=ENIMG[n];if(!im||!im.complete||!im.naturalWidth)return;const k=OC.sc,W=Math.ceil(m.w*k*kk),H=Math.ceil(m.h*k*kk);
+ EN.forEach(e=>{const T=ET(e),n=enFrame(e),m=T.fr[n],im=(e.beige&&window.VIGIA?ENIMG2:ENIMG)[n];if(!im||!im.complete||!im.naturalWidth)return;const k=T.sc,W=Math.ceil(m.w*k*kk),H=Math.ceil(m.h*k*kk);
   if(ecv.width<W||ecv.height<H){ecv.width=Math.max(ecv.width,W);ecv.height=Math.max(ecv.height,H)}else ecx.clearRect(0,0,W,H);
   ecx.globalCompositeOperation='source-over';ecx.imageSmoothingQuality='high';ecx.drawImage(im,0,0,W,H);
   ecx.globalCompositeOperation='source-atop';ecx.fillStyle='rgba(26,92,70,.20)';ecx.fillRect(0,0,W,H);
@@ -332,7 +339,7 @@ function draw(){
   EXP.forEach(x=>{const p=1-x.l/x.L;L(x.x,x.y,40+p*95,(1-p)*.9);cx.globalAlpha=(1-p)*.8;cx.strokeStyle='#9fdcff';cx.lineWidth=3*(1-p)+.5;cx.beginPath();cx.arc(x.x,x.y,10+p*80,0,7);cx.stroke()});PART.forEach(p=>{if(p.v===1)L(p.x,p.y,48,.7*(p.l/p.L))});if((P.glow||0)>.03)L(P.x,P.y-42,160,.28*P.glow)}
  FLY.forEach(f=>{const px=f.x+Math.sin(T*f.sp+f.ph)*22,py=f.y+Math.cos(T*f.sp*.8+f.ph)*14,al=.35+.5*Math.sin(T*1.6+f.ph);if(al<=0)return;cx.globalAlpha=Math.min(1,al);cx.drawImage(TEX_FLY,px-f.r*5,py-f.r*5,f.r*10,f.r*10)});
  cx.globalCompositeOperation='source-over';cx.globalAlpha=1;
- if(/dbg/.test(location.search)){cx.save();cx.lineWidth=2;[[TERR,'#ff0'],[HIGH,'#0ff']].forEach(([p,c])=>{cx.strokeStyle=c;cx.beginPath();p.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1]));cx.stroke()});cx.restore()}
+ if(/dbg/.test(location.search)){cx.save();cx.lineWidth=2;[[TERR,'#ff0'],[HIGH,'#0ff'],[HIGH2,'#f0f'],[HIGH3,'#f80']].forEach(([p,c])=>{cx.strokeStyle=c;cx.beginPath();p.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1]));cx.stroke()});cx.restore()}
  // viñeta y HUD
  cx.setTransform(1,0,0,1,0,0);cx.drawImage(VIG,0,0);
  cx.setTransform(kk,0,0,kk,0,0);
@@ -341,6 +348,7 @@ function draw(){
  for(let i=0;i<5;i++){cx.fillStyle=i<P.hp?'#e04040':'#444';cx.fillRect(10+i*18,26,14,12)}
  cx.fillStyle='#ddd';cx.font='11px Arial';cx.fillText('Estado: '+P.state+(P.canDash?'  ⚡ impulso listo':'  ⚡ recargando (toca suelo)'),10,54);
  if(!document.body.classList.contains('touch')){cx.fillText('◀▶/A D mover · ▼/S agachar (+fuego = plasma cargado) · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · R reiniciar · M sonido',10,GH-8)}
+ if(P.x>4130){const a=Math.min(1,(P.x-4130)/130);cx.globalAlpha=a;cx.fillStyle='#000';cx.fillRect(0,0,VW,GH);cx.fillStyle='#e8f0e0';cx.font='bold 22px Arial';cx.textAlign='center';cx.fillText('CONTINUARÁ…',VW/2,GH/2);cx.font='13px Arial';cx.fillText('La cueva guarda el siguiente nivel',VW/2,GH/2+24);cx.globalAlpha=1}
  if(P.dead){cx.fillStyle='#000a';cx.fillRect(0,130,VW,80);cx.fillStyle='#fff';cx.font='bold 26px Arial';cx.textAlign='center';cx.fillText('MISIÓN FALLIDA',VW/2,172);cx.font='13px Arial';cx.fillText('Pulsa R o salta para reiniciar',VW/2,196)}
 }
 let last=performance.now(),started=false;
