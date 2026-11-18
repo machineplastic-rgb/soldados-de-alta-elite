@@ -7,12 +7,14 @@
 <style>
 html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;font-family:Arial,sans-serif}
 #c{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;display:block}
-.b{z-index:3;position:fixed;border-radius:50%;background:rgba(255,255,255,.13);border:2px solid rgba(255,255,255,.55);color:rgba(255,255,255,.9);font:bold 15px Arial;letter-spacing:.5px;display:none;align-items:center;justify-content:center;touch-action:none}
-.b.on{background:rgba(255,255,255,.38)}
-body.touch .b{display:flex}
+.b{z-index:3;position:fixed;border-radius:50%;background:transparent;border:0;display:none;touch-action:none}
+.b svg,#knob svg{width:100%;height:100%;display:block;fill:none;stroke:rgba(255,255,255,.9);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}
+.b svg .f,#knob svg .f{fill:rgba(255,255,255,.9);stroke:none}
+.b.on{background:rgba(255,255,255,.16)}.b.on svg{stroke:#fff}
+body.touch .b{display:block}
 #zone{position:fixed;left:0;bottom:0;width:46vw;height:80vh;display:none;touch-action:none;z-index:1}
 body.touch #zone{display:block}
-#knob{position:fixed;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;background:rgba(255,255,255,.26);border:2px solid rgba(255,255,255,.75);display:none;pointer-events:none;z-index:2}
+#knob{position:fixed;width:88px;height:88px;margin:-44px 0 0 -44px;border-radius:50%;background:transparent;border:0;display:none;pointer-events:none;z-index:2}
 body.touch #knob{display:block}
 #knob.idle{opacity:.5}
 .tb{position:fixed;top:calc(8px + env(safe-area-inset-top));width:44px;height:36px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:8px;font-size:18px;z-index:5}
@@ -22,15 +24,17 @@ body.touch #knob{display:block}
 <canvas id="c"></canvas>
 <button id="mute" class="tb">🔊</button><button id="fs" class="tb">⛶</button>
 <div id="rot">Gira el móvil en horizontal ↻</div>
-<div id="zone"></div><div id="knob" class="idle"></div>
-<div class="b" id="bJ" style="right:calc(24px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px;font-size:13px">SALTO</div>
-<div class="b" id="bF" style="right:calc(112px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px;font-size:13px">FUEGO</div>
-<div class="b" id="bT" style="right:calc(68px + env(safe-area-inset-right));bottom:calc(118px + env(safe-area-inset-bottom));width:76px;height:76px;font-size:26px">⚡</div>
+<div id="zone"></div><div id="knob" class="idle"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" stroke-dasharray="62 10" transform="rotate(-80 50 50)"/><circle cx="50" cy="50" r="13"/><circle class="f" cx="50" cy="50" r="3.5"/><path d="M50 22V30M50 70V78M22 50H30M70 50H78"/></svg></div>
+<div class="b" id="bJ" style="right:calc(24px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="86 11" transform="rotate(-100 50 50)"/><path d="M30 58L50 36L70 58"/><path d="M36 70H64"/></svg></div>
+<div class="b" id="bF" style="right:calc(112px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="86 11" transform="rotate(-100 50 50)"/><circle cx="50" cy="50" r="13"/><circle class="f" cx="50" cy="50" r="3.5"/><path d="M50 22V35M50 65V78M22 50H35M65 50H78"/></svg></div>
+<div class="b" id="bC" style="right:calc(200px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="86 11" transform="rotate(-100 50 50)"/><circle class="f" cx="50" cy="50" r="9"/><circle cx="50" cy="50" r="21" stroke-dasharray="5 6"/><path d="M50 18V26M50 74V82M18 50H26M74 50H82"/></svg></div>
+<div class="b" id="bT" style="right:calc(68px + env(safe-area-inset-right));bottom:calc(118px + env(safe-area-inset-bottom));width:76px;height:76px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="86 11" transform="rotate(-100 50 50)"/><path d="M57 20L36 55H51L43 80L66 44H51Z"/></svg></div>
 <script src="spr.js"></script>
 <script src="local/ocula.js"></script>
 <script src="vigia.js"></script>
+<script src="bruto.js"></script>
 <script>
-const VERSION='demo técnica v20';
+const VERSION='demo técnica v21';
 // ---------- sprites ----------
 const NAMES=Object.keys(SPR),IMG={};let loaded=0;
 NAMES.forEach(n=>{const i=new Image();i.onload=()=>{loaded++};i.src='img/spr/'+n+'.webp';IMG[n]=i});
@@ -78,13 +82,13 @@ function scream(){tone(190,55,.6,'sawtooth',.28);tone(95,45,.6,'square',.12)}
  if('ontouchstart' in window)addEventListener('pointerdown',()=>{if(!document.fullscreenElement&&!document.webkitFullscreenElement)tog()},{once:true})})();
 document.getElementById('mute').onclick=e=>{muted=!muted;e.target.textContent=muted?'🔇':'🔊';if(master)master.gain.value=muted?0:.5;if(muted&&window.speechSynthesis)speechSynthesis.cancel()};
 // ---------- entrada ----------
-const K={};const keymap={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowDown:'d',s:'d',ArrowUp:'u',w:'u',' ':'j',z:'j',k:'j',x:'f',j:'f',c:'t',l:'t',Shift:'t',h:'h',m:'m',r:'rs'};
+const K={};const keymap={g:'g',ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowDown:'d',s:'d',ArrowUp:'u',w:'u',' ':'j',z:'j',k:'j',x:'f',j:'f',c:'t',l:'t',Shift:'t',h:'h',m:'m',r:'rs'};
 const pressed={};
 addEventListener('keydown',e=>{audio();const k=keymap[e.key.length>1?e.key:e.key.toLowerCase()];if(k){K[k]=1;if(!pressed[k]){pressed[k]=1;edge(k)}e.preventDefault()}});
 addEventListener('keyup',e=>{const k=keymap[e.key.length>1?e.key:e.key.toLowerCase()];if(k){K[k]=0;pressed[k]=0}});
-let jumpQ=0,dashQ=0;
-function edge(k){if(k==='j')jumpQ=.12;if(k==='t')dashQ=.12;if(k==='h')hurtMe();if(k==='v'&&!P.dead){P.win=1.1;SFX.win();VOZ.victoria()}if(k==='rs')respawn()}
-const touchMap={bJ:'j',bF:'f',bT:'t'};
+let jumpQ=0,dashQ=0,gQ=0;
+function edge(k){if(k==='g')gQ=.12;if(k==='j')jumpQ=.12;if(k==='t')dashQ=.12;if(k==='h')hurtMe();if(k==='v'&&!P.dead){P.win=1.1;SFX.win();VOZ.victoria()}if(k==='rs')respawn()}
+const touchMap={bJ:'j',bF:'f',bT:'t',bC:'g'};
 if('ontouchstart' in window||navigator.maxTouchPoints>0||/touch/.test(location.search))document.body.classList.add('touch');
 // joystick virtual flotante (un solo círculo): izquierda/derecha = mover, arriba = apuntar arriba, abajo = agacharse
 (function(){const zn=document.getElementById('zone'),kn=document.getElementById('knob');let pid=null,x0=0,y0=0;const R=60;
@@ -108,7 +112,7 @@ const HIGH=[[1130,252],[1200,215],[1250,188],[1300,166],[1350,152],[1450,148],[1
 const HIGH2=[[2290,228],[2330,208],[2360,200],[2440,204],[2500,200],[2540,190],[2580,178]];   // tronco caído de las copas (camino alto)
 const HIGH3=[[2850,204],[2930,218],[3005,234]];                                                 // pasarela de cuerda del poblado
 function ly(pts,x){if(x<pts[0][0]||x>pts[pts.length-1][0])return null;for(let i=1;i<pts.length;i++)if(x<=pts[i][0]){const a=pts[i-1],b=pts[i],t=(x-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*t}return pts[pts.length-1][1]}
-const SURF=[{pts:TERR,one:false},{pts:HIGH,one:true},{pts:HIGH2,one:true},{pts:HIGH3,one:true}];
+const SURF=[{pts:TERR,one:false},{pts:HIGH,one:true},{pts:HIGH2,one:true}];      // HIGH3 (pasarela del poblado) ya NO es plataforma: está en otro plano, a lo lejos (pedido de Marcos, v21)
 function gY(x){if(x<=TERR[0][0])return TERR[0][1];for(let i=1;i<TERR.length;i++)if(x<=TERR[i][0]){const a=TERR[i-1],b=TERR[i],t=(x-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*t}return TERR[TERR.length-1][1]}
 const FLOOR=gY(80);
 const BG=new Image();BG.src='img/bg/bosque.jpg';
@@ -119,7 +123,7 @@ const TARGETS=(window.OCULA||window.VIGIA)?[]:[560,860,1100].map(x=>({x,y:gY(x)-
 const FLY=Array.from({length:70},(_,i)=>({x:Math.random()*GW,y:80+Math.random()*230,ph:Math.random()*6.3,sp:.4+Math.random()*.9,r:1.2+Math.random()*1.8}));
 const tcv=document.createElement('canvas'),tcx=tcv.getContext('2d'),ecv=document.createElement('canvas'),ecx=ecv.getContext('2d');
 // ---------- jugador ----------
-const P={x:80,y:FLOOR,vx:0,vy:0,dir:1,on:true,crouch:0,fire:0,flash:0,dash:0,dashCd:0,canDash:1,hp:5,inv:0,hurt:0,dead:0,win:0,t:0,stepT:0,coyote:0,state:'idle',fcount:0};
+const P={x:80,y:FLOOR,vx:0,vy:0,dir:1,on:true,crouch:0,fire:0,flash:0,dash:0,dashCd:0,canDash:1,hp:5,inv:0,hurt:0,dead:0,win:0,t:0,stepT:0,coyote:0,state:'idle',fcount:0,plasma:10,reserve:10,reload:0};
 const BU=[],PART=[],GHO=[],GR=[],EXP=[];let ghT=0;   // GR = granadas de plasma (disparo agachado), EXP = explosioneslet ghT=0;
 // ---------- enemigo local: Ocula (solo en casa; la carpeta local\ no se sube a git) ----------
 const OC=window.OCULA||window.VIGIA,EN=[],ENIMG={},ENIMG2={};      // en casa sale Ocula (local); en la web pública, el Vigía original
@@ -127,9 +131,10 @@ const ENS=1.3;[window.OCULA,window.VIGIA].forEach(T=>{if(T){T.sc*=ENS;T.h*=ENS}}
 const ET=e=>(e.beige&&window.VIGIA)?window.VIGIA:OC;                    // tipo de cada enemigo: los beige siempre son el Vigía repintado
 if(OC){Object.keys(OC.fr).forEach(n=>{const i=new Image();i.src=OC.base+n+'.webp';ENIMG[n]=i});
  if(window.VIGIA)Object.keys(window.VIGIA.fr).forEach(n=>{const i=new Image();i.src='img/vigia2/'+n+'.webp';ENIMG2[n]=i});
- [640,900,1380,1650,2020].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:8,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}));
+ [640,900,1380,1650].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:6,beige:1,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}));      // principio del juego: solo los marrones (beige)
  // v19: habitantes beige claro del poblado (salen de los tipis, de las sombras) y uno en las copas
- [2380,2820,3000,3140,3335,3560,3800].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:6,beige:1,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}))}
+ [2020,2380,2820,3000,3140].forEach(x=>EN.push({x,y:gY(x),sx:x,dir:-1,hp:8,mode:'walk',mt:0,t:Math.random()*5,open:2+Math.random()*1.5,hit:0,fade:1}))}
+if(/sinenemigos/.test(location.search))EN.length=0;     // index.html?sinenemigos los quita (para probar al jefe)
 const OC_FPS=7,OC_SPD=34;
 function enFrame(e){switch(e.mode){case 'walk':return 'ow'+(Math.floor(e.t*OC_FPS)%8);case 'closing':return e.mt<.12?'es1':'es2';case 'closed':return 'es2';case 'opening':return e.mt<.12?'es3':'es0';case 'wind':return 'es4';case 'strike':return 'es5';case 'recover':return 'es0';case 'hurt':return 'es6';case 'dead':return 'es7'}return 'es0'}
 const enOpen=e=>!(e.mode==='closing'&&e.mt>=.12)&&e.mode!=='closed'&&e.mode!=='hurt'&&e.mode!=='dead';     // solo es vulnerable con el ojo abierto
@@ -158,12 +163,93 @@ function enemyStep(dt){
    else tone(1700,900,.06,'square',.12);      // rebota: tiene el ojo cerrado
    break}}
 }
-function hurtMe(){if(P.inv>0||P.dead)return;P.hp--;P.inv=1.2;P.hurt=.45;P.vx=-P.dir*140;P.vy=-180;P.on=false;SFX.hurt();scream();VOZ.dolor();if(P.hp<=0){P.dead=1;P.vx=-P.dir*60;SFX.die();VOZ.muerte()}}
-function respawn(){Object.assign(P,{x:80,y:FLOOR,vx:0,vy:0,hp:5,inv:1,hurt:0,dead:0,win:0,dash:0});TARGETS.forEach(t=>t.hp=3)}
+// ---------- jefe: el Bruto (guardián gigante a la entrada de la cueva: no se salta ni se atraviesa, solo se vence) ----------
+const BO=window.BRUTO,BOSS={x:4000,sx:4000,minx:3560,hp:40,hpmax:40,on:0,mode:'walk',t:0,hit:0,fade:1,mt:0,y:0,pf:-1,cd:3.5,att:null,at:0,nx:0,lift:0,away:0,did:0,ga:0,zapped:0},BHL=84,BHR=62,BSPD=24,BFPS=5,SPK=[],LG={seed:-1,bolts:[],ring:[],ground:[],dirty:1};let LGc=null;   // BHL/BHR: medio ancho hacia la izquierda (cara y pecho) y hacia la derecha (espalda)
+const BIMG={},BGEAR={};if(BO)Object.keys(BO.fr).forEach(n=>{const i=new Image();i.src=BO.base+n+'.webp';BIMG[n]=i;const g=new Image();g.src=BO.base+'g'+n.slice(1)+'.webp';BGEAR[n]=g});   // bN = fotograma, gN = engranaje principal recortado (gira encima)
+let SHK=0,BMg=null,bmTried=0,BMl1=null,BMl2=null;   // temblor de cámara por las pisadas, ruido de maquinaria
+function bmInit(){try{const mkN=k=>{const n=AC.sampleRate*3|0,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);let l=0;for(let i=0;i<n;i++){l=l*k+(Math.random()*2-1)*(1-k);d[i]=l*3}const s=AC.createBufferSource();s.buffer=b;s.loop=true;return s};
+ BMg=AC.createGain();BMg.gain.value=0;
+ const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=46;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=190;const g1=AC.createGain();g1.gain.value=.45;o.connect(lp);lp.connect(g1);g1.connect(BMg);      // motor: zumbido grave
+ const l1=AC.createOscillator();l1.frequency.value=4.2;const lg=AC.createGain();lg.gain.value=.4;l1.connect(lg);lg.connect(g1.gain);                                                                              // ...que "tose" 4 veces por segundo
+ const n=mkN(.2),fb=AC.createBiquadFilter();fb.type='bandpass';fb.frequency.value=1500;fb.Q.value=2.5;const g2=AC.createGain();g2.gain.value=.14;n.connect(fb);fb.connect(g2);g2.connect(BMg);                  // engranajes: clics
+ const l2=AC.createOscillator();l2.type='square';l2.frequency.value=9;const lg2=AC.createGain();lg2.gain.value=.12;l2.connect(lg2);lg2.connect(g2.gain);
+ const n3=mkN(.1),f3=AC.createBiquadFilter();f3.type='highpass';f3.frequency.value=4500;const g3=AC.createGain();g3.gain.value=.05;n3.connect(f3);f3.connect(g3);g3.connect(BMg);                                  // cadenas y roce
+ BMl1=l1;BMl2=l2;BMg.connect(master);o.start();l1.start();n.start();l2.start();n3.start()}catch(e){BMg=null}}
+function bmSound(){if(!AC||!BO)return;if(!BMg){if(!bmTried){bmTried=1;bmInit()}return}const b=BOSS,v=(b.on&&b.mode!=='dead')?Math.max(0,1-Math.abs(P.x-b.x)/720):0;const fast=b.att==='elec'&&b.at<BELW?b.at/BELW:(b.att==='elec'&&b.at<BELW+BELD?1:0);BMg.gain.setTargetAtTime(v*v*(.5+.5*fast),AC.currentTime,.2);if(BMl1){BMl1.frequency.setTargetAtTime(4.2+fast*13,AC.currentTime,.12);BMl2.frequency.setTargetAtTime(9+fast*32,AC.currentTime,.12)}}   // engranajes: más rápido y fuerte antes y durante la descarga
+const bossAlive=()=>BO&&BOSS.mode!=='dead';
+if(/boss/.test(location.search)){P.x=3300;P.y=gY(3300)}   // atajo de prueba: index.html?boss te deja justo antes del jefe
+function bossReset(){Object.assign(BOSS,{x:BOSS.sx,hp:BOSS.hpmax,on:0,mode:'walk',t:0,hit:0,fade:1,mt:0,pf:-1,cd:3.5,att:null,at:0,nx:0,lift:0,away:0,did:0,zapped:0});SPK.length=0;LG.seed=-1;LG.bolts=[]}
+function hurtBoss(d){const b=BOSS;if(!bossAlive())return;b.hp-=d;
+ if(b.hp<=24&&!b.drop1){b.drop1=1;ITEMS.push({x:Math.max(3250,b.x-300),type:'medkit',taken:0,ph:1})}      // el jefe suelta ayuda: botiquín al 60 % y escudo al 30 %
+ if(b.hp<=12&&!b.drop2){b.drop2=1;ITEMS.push({x:Math.max(3230,b.x-330),type:'ammo',taken:0,ph:2})}
+b.hit=.12;noise(.1,.3,900);tone(120,70,.12,'square',.14);
+ if(b.hp<=0){b.mode='dead';b.mt=0;SFX.die();explode(b.x-30,b.y-120);explode(b.x+20,b.y-60)}}
+function bossStep(dt){
+ if(!BO)return;const b=BOSS;b.hit=Math.max(0,b.hit-dt);if(b.hs===undefined||b.hs<b.hp)b.hs=b.hp;if(b.hs>b.hp)b.hs=Math.max(b.hp,b.hs-dt*14);b.y=gY(b.x);SHK=Math.max(0,SHK-dt*28);bmSound();
+ if(b.mode==='dead'){b.mt+=dt;b.fade=Math.max(0,1-Math.max(0,b.mt-1.2)/1.6);return}
+ if(!b.on&&P.x>b.x-560&&!P.dead)b.on=1;
+ if(!b.on)return;
+ const ph2=b.hp<=b.hpmax/2;      // a mitad de vida se acelera y ataca más seguido
+ if(b.att)bossAttack(dt,ph2);
+ else{b.t+=dt;b.ga=(b.ga||0)+dt*(b.x>b.minx?2.6:1.1)*(ph2?1.5:1);if(b.x>b.minx)b.x=Math.max(b.minx,b.x-BSPD*(ph2?1.25:1)*dt);   // el engranaje gira más rápido al andar
+  b.cd-=dt;if(b.cd<=0&&!P.dead&&P.x<b.x&&b.x-P.x<620)startBossAttack()}
+ const pf=Math.floor(b.t*BFPS)%8;if(pf!==b.pf){b.pf=pf;const v=Math.max(0,1-Math.abs(P.x-b.x)/720);   // pisadas: retumban y hacen temblar la cámara
+  if((pf===0||pf===4)&&v>0){tone(44,24,.42,'sine',.6*v);tone(90,40,.22,'triangle',.25*v);noise(.35,.4*v,70);tone(1300,500,.05,'square',.05*v);SHK=Math.max(SHK,9*v)}}
+ for(let i=BU.length-1;i>=0;i--){const q=BU[i];if(q.x>b.x-BHL-10&&q.x<b.x+BHR&&q.y>b.y-BO.h&&q.y<b.y+4){BU.splice(i,1);hurtBoss(1);if(!bossAlive())break}}}
+// ataque del Bruto: DESCARGA ELÉCTRICA, sin aviso visual: avisa el sonido (engranajes que aceleran + pitidos del altavoz). Los rayos llegan a BELR px del engranaje: hay que estar lejos.
+const BELW=1.2,BELD=1.4,BELR=230;      // aviso sonoro, duración de la descarga, radio
+function bossGearPos(){const b=BOSS,mv=b.on&&b.x>b.minx+1,n='b'+(b.on?Math.floor(b.t*(mv?BFPS:BFPS*.5))%8:0),m=BO.fr[n],k=BO.sc;return {x:b.x+(m.gx-m.cx)*k,y:b.y-(m.by-m.gy)*k-(b.lift||0)}}
+function lgBuild(g,seed){   // geometría de la red de rayos (se rehace ~24 veces por segundo)
+ const rs=a=>{const v=Math.sin(a*127.1+311.7)*43758.5453;return v-Math.floor(v)},N=9,ends=[];LG.seed=seed;LG.bolts=[];LG.ring=[];LG.ground=[];
+ for(let k=0;k<N;k++){const an=(k/N)*6.283+rs(seed*7+k)*.5;let rad=BELR*(.72+.28*rs(seed*3+k*5)),ex=g.x+Math.cos(an)*rad,ey=g.y+Math.sin(an)*rad;if(k===2||k===6){ex=g.x+(rs(seed*5+k)-.5)*BELR*1.7;ey=gY(ex);rad=Math.hypot(ex-g.x,ey-g.y)}   // dos rayos siempre caen al suelo (de ahí saltan las chispas)
+  const gy2=gY(ex),onG=ey>=gy2-2;if(ey>gy2)ey=gy2;ends.push([ex,ey]);if(onG)LG.ground.push([ex,ey]);
+  const pts=[[g.x,g.y]];for(let t=1;t<7;t++){const f=t/7,px=g.x+(ex-g.x)*f,py=g.y+(ey-g.y)*f,jj=(rs(seed*11+k*13+t)-.5)*30*Math.sin(f*3.14);pts.push([px-(ey-g.y)/rad*jj,py+(ex-g.x)/rad*jj])}pts.push([ex,ey]);LG.bolts.push({pts})}
+ for(let k=0;k<N;k++){const A=ends[k],B=ends[(k+1)%N],f=.62,ax=g.x+(A[0]-g.x)*f,ay=g.y+(A[1]-g.y)*f,bx=g.x+(B[0]-g.x)*f,by=g.y+(B[1]-g.y)*f,pts=[[ax,ay]];for(let t=1;t<5;t++){const ff=t/5;pts.push([ax+(bx-ax)*ff,ay+(by-ay)*ff+(rs(seed*17+k*5+t)-.5)*18])}pts.push([bx,by]);LG.ring.push(pts)}
+ LG.dirty=1}
+function startBossAttack(){const b=BOSS;b.att='elec';b.at=0;b.did=0;b.zapped=0;LG.seed=-1;
+ for(let i=0;i<10;i++)tone(1000+i*95,1000+i*95,.06,'square',.075,i*(.15-i*.0105));tone(110,420,BELW,'sawtooth',.2);tone(60,200,BELW,'sine',.3)}      // pitidos del altavoz cada vez más rápidos + zumbido de engranajes que sube
+function bossAttack(dt,ph2){const b=BOSS;b.at+=dt;
+ const zapping=b.at>=BELW&&b.at<BELW+BELD,q=Math.min(1,b.at/BELW);b.ga=(b.ga||0)+dt*(zapping?70:10+55*q*q);
+ if(!b.did&&b.at>=BELW){b.did=1;SHK=Math.max(SHK,10);tone(1900,160,.3,'sawtooth',.38);noise(.5,.5,2200);tone(70,40,.5,'sine',.5)}
+ if(zapping){const g=bossGearPos(),seed=Math.floor(b.at*24);if(seed!==LG.seed)lgBuild(g,seed);
+  b.zt=(b.zt||0)-dt;if(b.zt<=0){b.zt=.05;noise(.06,.32,3000);if(Math.random()<.5)tone(1200+Math.random()*1800,300,.05,'sawtooth',.1)}
+  if(SPK.length<70){for(let i=0;i<3&&LG.ground.length;i++){const e=LG.ground[(Math.random()*LG.ground.length)|0];SPK.push({x:e[0],y:e[1]-2,vx:(Math.random()-.5)*260,vy:-90-Math.random()*240,l:.5+Math.random()*.4})}   // chispas que saltan donde los rayos tocan el suelo
+   SPK.push({x:g.x+(Math.random()-.5)*50,y:g.y+(Math.random()-.5)*50,vx:(Math.random()-.5)*300,vy:-60-Math.random()*180,l:.4+Math.random()*.3})}
+  if(!b.zapped&&!P.dead&&P.inv<=0&&Math.hypot(P.x-g.x,(P.y-60)-g.y)<BELR){b.zapped=1;hurtMe()}}
+ if(b.at>=BELW+BELD+.4){b.att=null;b.cd=ph2?2.4:3.6;LG.bolts=[]}}
+function atkStep(dt){
+ for(let i=SPK.length-1;i>=0;i--){const p=SPK[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=620*dt;p.l-=dt;const gy=gY(p.x);if(p.y>gy){p.y=gy;p.vy*=-.45;p.vx*=.8;if(Math.abs(p.vy)<40)p.vy=0}if(p.l<=0)SPK.splice(i,1)}}   // las chispas rebotan en el suelo
+function bossBlock(){const b=BOSS;if(!bossAlive())return;     // sólido: más alto que el salto, no se puede pasar por encima ni por dentro
+ const bl=b.x-BHL-HW,br=b.x+BHR+HW;
+ if(P.x>bl&&P.x<br){if(P.x<b.x){P.x=bl;if(P.vx>0)P.vx=0}else{P.x=br;if(P.vx<0)P.vx=0}
+  if(P.inv<=0&&!P.dead&&P.hurt<=0)hurtMe()}}
+// ---------- objetos: BOTIQUÍN (+2 corazones) y ESCUDO temporal (8 s sin daño) ----------
+const HUDI={};['medkit','shield','heart','heart0','skull','bolt'].forEach(n=>{const i=new Image();i.src='img/hud/'+n+'.webp';HUDI[n]=i});
+const ITEMS=[],FXP=[],ITEM_DEF=[[1200,'ammo'],[1700,'medkit'],[2350,'ammo'],[3050,'medkit'],[3150,'ammo'],[3230,'ammo'],[3290,'medkit']];      // v21: el escudo queda desactivado por ahora (el código sigue); 'ammo' = celda de plasma (+10 en la reserva)
+let BUBc=null;
+function itemsReset(){ITEMS.length=0;FXP.length=0;ITEM_DEF.forEach(d=>ITEMS.push({x:d[0],type:d[1],taken:0,ph:Math.random()*6}));BOSS.drop1=0;BOSS.drop2=0}
+function itemFx(x,y,col){for(let i=0;i<22;i++){const a=Math.random()*6.283,v=60+Math.random()*140;FXP.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-40,l:.5+Math.random()*.4,c:col})}}
+function itemsStep(dt){P.shield=Math.max(0,(P.shield||0)-dt);P.healT=Math.max(0,(P.healT||0)-dt);P.shT=Math.max(0,(P.shT||0)-dt);
+ for(let i=FXP.length-1;i>=0;i--){const p=FXP[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt;p.l-=dt;if(p.l<=0)FXP.splice(i,1)}
+ if(P.dead)return;
+ ITEMS.forEach(it=>{if(it.taken)return;const iy=gY(it.x)-34-Math.sin(P.t*3+it.ph)*4;
+  if(Math.abs(P.x-it.x)<30&&Math.abs((P.y-50)-iy)<62){it.taken=1;
+   if(it.type==='medkit'){P.hp=Math.min(5,P.hp+2);P.healT=.8;tone(520,520,.09,'sine',.18);tone(660,660,.09,'sine',.18,.09);tone(880,880,.16,'sine',.2,.18);itemFx(it.x,iy,'120,255,150')}
+   else if(it.type==='ammo'){P.reserve=Math.min(40,P.reserve+10);P.ammoT=.8;tone(420,420,.07,'square',.12);tone(630,630,.07,'square',.12,.07);tone(840,1100,.14,'sawtooth',.14,.14);itemFx(it.x,iy,'120,200,255')}
+   else{P.shield=8;tone(300,900,.35,'sine',.22);tone(900,1500,.2,'triangle',.12,.2);itemFx(it.x,iy,'120,200,255')}}});
+ // recarga automática del plasma cuando se agota
+ P.ammoT=Math.max(0,(P.ammoT||0)-dt);
+ if(P.reload>0){P.reload-=dt;if(P.reload<=0){P.reload=0;const t=Math.min(10,P.reserve);P.plasma=t;P.reserve-=t;tone(300,520,.12,'square',.14);tone(520,800,.1,'square',.12,.12)}}
+ else if(P.plasma<=0&&P.reserve>0&&!P.dead){P.reload=.9;tone(160,110,.25,'sawtooth',.2)}}
+function mkBubble(){const c=mk(120,180),g=c.getContext('2d'),gr=g.createRadialGradient(60,90,20,60,90,86);gr.addColorStop(0,'rgba(90,170,255,0)');gr.addColorStop(.75,'rgba(90,170,255,.16)');gr.addColorStop(1,'rgba(160,220,255,.55)');g.fillStyle=gr;g.beginPath();g.ellipse(60,90,56,86,0,0,7);g.fill();g.strokeStyle='rgba(200,235,255,.85)';g.lineWidth=2.5;g.beginPath();g.ellipse(60,90,55,85,0,0,7);g.stroke();g.strokeStyle='rgba(160,215,255,.4)';g.lineWidth=1.2;for(let i=0;i<3;i++){g.beginPath();g.ellipse(60,90,55,85,0,i*2.1,i*2.1+1.1);g.stroke()}return c}
+function hurtMe(){if(P.inv>0||P.dead)return;if((P.shield||0)>0){P.shT=.3;P.inv=.4;tone(1100,1600,.08,'sine',.12);return}   // el escudo absorbe el golpe
+ P.hp--;P.inv=1.2;P.hurt=.45;P.vx=-P.dir*140;P.vy=-180;P.on=false;SFX.hurt();scream();VOZ.dolor();if(P.hp<=0){P.dead=1;P.vx=-P.dir*60;SFX.die();VOZ.muerte()}}
+function respawn(){Object.assign(P,{x:80,y:FLOOR,vx:0,vy:0,hp:5,inv:1,hurt:0,dead:0,win:0,dash:0,shield:0,healT:0,plasma:10,reserve:10,reload:0});TARGETS.forEach(t=>t.hp=3);bossReset();itemsReset()}
+itemsReset();
 const AIMV=[[1,0],[.707,-.707],[.25,-.97],[.707,.707],[.3,.95]];
 const SPEED=150*PS,G=1000*PS,JV=-430*PS,DASHV=380*PS,DASHT=.22,HW=9*PS;   // física proporcional al tamaño
 function step(dt){
- P.glow=Math.max(0,(P.glow||0)-dt*5.5);P.t+=dt;jumpQ=Math.max(0,jumpQ-dt);dashQ=Math.max(0,dashQ-dt);P.inv=Math.max(0,P.inv-dt);P.hurt=Math.max(0,P.hurt-dt);P.fire=Math.max(0,P.fire-dt);P.brake=Math.max(0,(P.brake||0)-dt);P.flash=Math.max(0,P.flash-dt);P.dashCd=Math.max(0,P.dashCd-dt);
+ P.glow=Math.max(0,(P.glow||0)-dt*5.5);P.t+=dt;jumpQ=Math.max(0,jumpQ-dt);gQ=Math.max(0,gQ-dt);dashQ=Math.max(0,dashQ-dt);P.inv=Math.max(0,P.inv-dt);P.hurt=Math.max(0,P.hurt-dt);P.fire=Math.max(0,P.fire-dt);P.brake=Math.max(0,(P.brake||0)-dt);P.flash=Math.max(0,P.flash-dt);P.dashCd=Math.max(0,P.dashCd-dt);
  if(P.win>0&&!P.dead){P.win-=dt;P.vx=0;if(K.l||K.r||K.j||K.f||K.t||K.d)P.win=0;if(P.win<0)P.win=0}
  const lock=P.dead||P.hurt>0||P.win>0;
  const mv=(K.r?1:0)-(K.l?1:0);
@@ -181,12 +267,13 @@ function step(dt){
   if(dashQ>0&&P.dashCd<=0&&P.canDash){P.dash=DASHT;P.dashT=0;P.canDash=0;P.dashCd=.45;P.vy=0;dashQ=0;SFX.dash();VOZ.dash()}
   // disparo
   if(K.f&&P.fire<=0){shoot()}
+  else if(gQ>0&&P.fire<=0){gQ=0;shoot(true)}      // botón CARGA (táctil) o tecla G: plasma cargado sin agacharse
  }
  if(P.dash>0){P.dash-=dt;P.dashT+=dt;P.vx=P.dir*DASHV;P.vy=0;if(P.dash<=0)P.brake=.2}
  else P.vy+=G*dt;
  if(P.vy>700)P.vy=700;
  // mover X
- P.x+=P.vx*dt;P.x=Math.max(14*PS,Math.min(GEND,P.x));
+ P.x+=P.vx*dt;P.x=Math.max(14*PS,Math.min(GEND,P.x));bossBlock();
  // mover Y + suelo / plataformas
  const oy=P.y;P.y+=P.vy*dt;const was=P.on;P.on=false;
  if(P.vy>=0){
@@ -207,6 +294,7 @@ function step(dt){
  for(let i=GR.length-1;i>=0;i--){const g=GR[i];if(!g.f)g.vy+=1100*dt;g.x+=g.vx*dt;g.y+=g.vy*dt;g.l-=dt;let boom=g.l<=0;
   const gy=gY(g.x);if(g.f){if(g.y>=gy-3)boom=true}else if(g.vy>0&&g.y>=gy){g.y=gy;g.vy=-g.vy*.4;g.vx*=.6;g.b++;noise(.05,.15,1500);if(g.b>=2)boom=true}
   if(!boom&&OC)for(const e of EN)if(e.mode!=='dead'&&Math.abs(g.x-e.x)<28&&g.y>e.y-ET(e).h&&g.y<e.y+6){boom=true;break}
+  if(!boom&&bossAlive()&&g.x>BOSS.x-BHL-8&&g.x<BOSS.x+BHR&&g.y>BOSS.y-BO.h&&g.y<BOSS.y+6)boom=true;
   if(!boom)for(const t of TARGETS)if(t.hp>0&&Math.abs(g.x-t.x)<18&&g.y>t.y-8&&g.y<t.y+40){boom=true;break}
   if(boom){explode(g.x,g.y);GR.splice(i,1)}}
  for(let i=EXP.length-1;i>=0;i--){EXP[i].l-=dt;if(EXP[i].l<=0)EXP.splice(i,1)}
@@ -230,27 +318,31 @@ function step(dt){
 
  if(s!==P.state){P.state=s;P.ft=0}else P.ft=(P.ft||0)+dt;
  if(OC)enemyStep(dt);
+ bossStep(dt);atkStep(dt);itemsStep(dt);
 }
 function explode(x,y){
  const R=78;EXP.push({x,y,l:.55,L:.55});tone(130,30,.45,'sawtooth',.32);tone(900,200,.2,'sine',.12);noise(.4,.45,250);
  if(OC)EN.forEach(e=>{if(e.mode==='dead')return;if(Math.hypot(e.x-x,e.y-ET(e).h*.5-y)>R+16)return;
   if(enOpen(e)){e.hp-=3;e.hit=.12;if(e.hp<=0){e.mode='dead';e.mt=0;SFX.die()}else{e.mode='hurt';e.mt=0}}else tone(1700,900,.06,'square',.12)});
+ if(bossAlive()){const b=BOSS,dx=Math.max(0,Math.abs(x-b.x)-(x<b.x?BHL:BHR));if(dx<R&&y>b.y-BO.h-R&&y<b.y+R)hurtBoss(3)}
  TARGETS.forEach(t=>{if(t.hp>0&&Math.hypot(t.x-x,t.y+16-y)<R+14){t.hp-=2;t.hit=.12;if(t.hp<=0)tone(200,60,.3,'square',.2)}})}
 function chargedShot(mx,my,ax,ay){   // plasma cargado: sale recto de la punta del cañón, grande y lento, explota al tocar algo
- GR.push({x:mx,y:my,vx:ax*P.dir*430,vy:ay*430,l:1.3,b:0,f:1});tone(260,520,.22,'sawtooth',.2);tone(90,180,.3,'sine',.25)}
-function shoot(){
- P.fire=P.crouch?.6:.16;P.flash=.09;P.shotN=(P.shotN||0)+1;SFX.shot();VOZ.ataque();P.glow=1;
+ GR.push({x:mx,y:my,vx:ax*P.dir*430,vy:ay*430,l:1.3,b:0,f:1});tone(90,45,.5,'sawtooth',.4);tone(55,28,.6,'sine',.55);tone(240,110,.28,'square',.12);noise(.32,.35,160);SHK=Math.max(SHK,3)}      // más fuerte y más grave
+function shoot(forceC){
+ P.fire=(P.crouch||forceC)?.6:.16;P.flash=.09;P.shotN=(P.shotN||0)+1;SFX.shot();VOZ.ataque();P.glow=1;
  // fotograma que se mostrará al apuntar: de él salen la punta del cañón y el ángulo real del fusil
  let fr=frame();if(P.aim>0&&P.state!=='runu')fr=P.crouch?'a1_6':['a1_0','a1_1','a1_2','a1_3','a1_4'][P.aim];else if(P.crouch)fr='a1_5';
  const m=SPR[fr],kz=SC*(m.sc||1)/(m.z||1),mx=P.x+P.dir*(m.tx-m.cx)*kz,my=P.y-(m.by-m.ty)*kz;
  let ax=1,ay=0;if(P.aim>0&&m.ax!==undefined){ax=m.ax;ay=m.ay}   // solo al apuntar se usa el ángulo medido del fusil; en carrera, horizontal
- if(P.crouch){chargedShot(mx,my,ax,ay);PART.push({x:mx,y:my,l:.14,L:.14,v:1});return}   // agachado: plasma cargado
+ if(P.crouch||forceC){   // plasma cargado: gasta una carga; si no queda, no sale (se recarga solo de la reserva)
+  if(P.plasma<=0||P.reload>0){P.fire=.35;tone(150,90,.09,'square',.14);return}
+  P.plasma--;chargedShot(mx,my,ax,ay);PART.push({x:mx,y:my,l:.14,L:.14,v:1});return}
  BU.push({x:mx,y:my,vx:ax*P.dir*700,vy:ay*700,l:1.0,d:P.dir});
  PART.push({x:mx,y:my,l:.1,L:.1,v:1})
 }
 // ---------- dibujo (optimizado: capas pre-escaladas, texturas de luz y resolución interna limitada) ----------
 const cv=document.getElementById('c'),cx=cv.getContext('2d',{alpha:false});let kk=1,cam=0,VW=640;
-const RS=2;   // píxeles internos por unidad lógica: tope de resolución para que vaya fluido, también en pantalla completa
+let RS=2;   // (baja sola si el juego va lento, ver loop) píxeles internos por unidad lógica: tope de resolución para que vaya fluido, también en pantalla completa
 const FG=new Image();FG.src='img/bg/primer_plano.jpg';const FGP=1.3,FGW=5606;      // primer plano: parallax 1.3
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
 let BGc=null,FGc=null,VIG=null;
@@ -304,7 +396,7 @@ function draw(){
  cx.setTransform(1,0,0,1,0,0);cx.imageSmoothingQuality='medium';cx.globalCompositeOperation='source-over';cx.globalAlpha=1;
  cam+=(Math.max(0,Math.min(GW-VW,P.x-VW/2))-cam)*.12;
  if(BGc)cx.drawImage(BGc,Math.min(Math.round(cam*RS),BGc.width-cv.width),0,cv.width,cv.height,0,0,cv.width,cv.height);else{cx.fillStyle='#06241d';cx.fillRect(0,0,cv.width,cv.height)}
- cx.setTransform(kk,0,0,kk,0,0);cx.translate(-Math.round(cam),0);
+ cx.setTransform(kk,0,0,kk,0,0);cx.translate(-Math.round(cam)+(SHK>.3?(Math.random()-.5)*SHK:0),SHK>.3?(Math.random()-.5)*SHK*.6:0);
  const T=performance.now()/1000;
  drawWater(T);wfSound();
  // plataformas de prueba: troncos oscuros
@@ -319,6 +411,20 @@ function draw(){
   if(e.hit>0){ecx.fillStyle='rgba(255,255,255,'+(.7*e.hit/.12)+')';ecx.fillRect(0,0,W,H)}
   const g=ecx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(190,255,200,.08)');g.addColorStop(1,'rgba(0,20,10,.2)');ecx.fillStyle=g;ecx.fillRect(0,0,W,H);ecx.globalCompositeOperation='source-over';
   cx.save();cx.globalAlpha=e.fade;cx.translate(e.x,e.y);cx.fillStyle='rgba(0,12,8,.3)';cx.beginPath();cx.ellipse(0,1,24,4,0,0,7);cx.fill();cx.scale(e.dir,1);cx.imageSmoothingQuality='high';cx.drawImage(ecv,0,0,W,H,-m.cx*k,-m.by*k,W/kk,H/kk);cx.restore()});
+ // jefe: el Bruto (mira siempre a la izquierda: hoja izquierda propia, no se voltea)
+ if(BO&&BOSS.fade>0){const b=BOSS,mv=b.on&&b.x>b.minx+1&&b.mode!=='dead',n='b'+(b.mode==='dead'?0:(b.on?Math.floor(b.t*(mv?BFPS:BFPS*.5))%8:0)),m=BO.fr[n],im=BIMG[n];
+  if(im&&im.complete&&im.naturalWidth){const k=BO.sc,W=Math.ceil(m.w*k*kk),H=Math.ceil(m.h*k*kk);
+   if(ecv.width<W||ecv.height<H){ecv.width=Math.max(ecv.width,W);ecv.height=Math.max(ecv.height,H)}else ecx.clearRect(0,0,W,H);
+   ecx.globalCompositeOperation='source-over';ecx.imageSmoothingQuality='high';ecx.drawImage(im,0,0,W,H);
+   const gi=BGEAR[n],f=k*kk;
+   if(false){ecx.fillStyle='#1a1b1e';ecx.beginPath();ecx.arc(m.gx*f,m.gy*f,m.gr*f*.98,0,7);ecx.fill();ecx.strokeStyle='#44464c';ecx.lineWidth=3*f;ecx.beginPath();ecx.arc(m.gx*f,m.gy*f,m.gr*f*.8,0,7);ecx.stroke();ecx.fillStyle='#2b2c31';ecx.beginPath();ecx.arc(m.gx*f,m.gy*f,m.gr*f*.22,0,7);ecx.fill()}   // sin engranaje: se ve el hueco
+   if(gi&&gi.complete&&gi.naturalWidth&&m.gr){ecx.save();ecx.translate(m.gx*f,m.gy*f);ecx.rotate(b.ga||0);ecx.drawImage(gi,-m.gr*f,-m.gr*f,m.gr*2*f,m.gr*2*f);ecx.restore()}   // engranaje principal girando
+   ecx.globalCompositeOperation='source-atop';ecx.fillStyle='rgba(20,70,55,.16)';ecx.fillRect(0,0,W,H);
+   if(b.att==='elec'&&b.at>=BELW&&b.at<BELW+BELD&&Math.random()<.5){ecx.fillStyle='rgba(170,215,255,.16)';ecx.fillRect(0,0,W,H)}   // destello eléctrico en el cuerpo durante la descarga
+   if(b.hit>0){ecx.fillStyle='rgba(255,255,255,'+(.7*b.hit/.12)+')';ecx.fillRect(0,0,W,H)}
+   if(b.mode==='dead'&&Math.floor(b.mt*14)%2===0){ecx.fillStyle='rgba(255,255,255,.45)';ecx.fillRect(0,0,W,H)}
+   const g=ecx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(190,255,200,.06)');g.addColorStop(1,'rgba(0,20,10,.26)');ecx.fillStyle=g;ecx.fillRect(0,0,W,H);ecx.globalCompositeOperation='source-over';
+   cx.save();cx.globalAlpha=b.fade;cx.translate(b.x,b.y);cx.fillStyle='rgba(0,12,8,.35)';cx.beginPath();cx.ellipse(0,1,92-(b.lift||0)*.8,9,0,0,7);cx.fill();cx.translate(0,-(b.lift||0));cx.imageSmoothingQuality='high';cx.drawImage(ecv,0,0,W,H,-m.cx*k,-m.by*k,W/kk,H/kk);cx.restore()}}
  // estelas del impulso
  GHO.forEach(g=>spr(g.n,g.x,g.y,g.d,g.a*g.l/g.L));
  // soldado
@@ -329,6 +435,25 @@ function draw(){
  if(BU.length){cx.save();cx.globalCompositeOperation='lighter';cx.lineCap='round';BU.forEach(b=>{const tx=b.x-b.vx*.04,ty=b.y-(b.vy||0)*.04;cx.strokeStyle='rgba(40,120,255,.35)';cx.lineWidth=7;cx.beginPath();cx.moveTo(b.x,b.y);cx.lineTo(tx,ty);cx.stroke();cx.strokeStyle='rgba(120,200,255,.8)';cx.lineWidth=3.6;cx.beginPath();cx.moveTo(b.x,b.y);cx.lineTo(b.x-b.vx*.026,b.y-(b.vy||0)*.026);cx.stroke();cx.strokeStyle='#eaf8ff';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(b.x,b.y);cx.lineTo(b.x-b.vx*.016,b.y-(b.vy||0)*.016);cx.stroke()});cx.restore()}
  // primer plano oscuro, opaco (alfa normal)
  if(FGc){cx.save();cx.setTransform(1,0,0,1,0,0);if(FGc._raw)cx.globalCompositeOperation='multiply';cx.drawImage(FGc,Math.min(Math.round(cam*FGP*RS),FGc.width-cv.width),0,cv.width,FGc.height,0,Math.round(-16*RS),cv.width,Math.round((GH+28)*RS));cx.restore()}
+ // el soldado se vuelve a pintar encima del primer plano a media opacidad: nunca desaparece tras las hojas (v20, necesario para el jefe)
+ if(BOSS.on&&bossAlive())sprTint(frame(),P.x-P.dir*(P.flash>0?3*(P.flash/.09):0),P.y+(P.state==='dead'?2:0),P.dir,blink?.2:.55);
+ // ataques del jefe (se pintan sobre el primer plano para que siempre se vean): onda de choque y engranaje sierra
+ // descarga eléctrica del jefe: capa suave de baja resolución (da el desenfoque y es barata) + núcleos finos + chispas que saltan
+ if(BO&&BOSS.att==='elec'&&BOSS.at>=BELW&&BOSS.at<BELW+BELD&&LG.bolts.length){const b=BOSS,g=bossGearPos(),al=Math.min(1,(b.at-BELW)/.08)*Math.min(1,(BELW+BELD-b.at)/.25),S=BELR+36,LS=.55;
+  if(!LGc)LGc=mk(S*2*LS,S*2*LS);
+  if(LG.dirty){const c=LGc.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,LGc.width,LGc.height);c.setTransform(LS,0,0,LS,-(g.x-S)*LS,-(g.y-S)*LS);
+   c.globalAlpha=.55;c.drawImage(TEX_BLUE,g.x-130,g.y-130,260,260);c.globalAlpha=.4;c.drawImage(TEX_BLUE,g.x-BELR,g.y-BELR,BELR*2,BELR*2);c.globalAlpha=1;
+   c.lineJoin='round';c.lineCap='round';c.strokeStyle='rgba(80,140,255,.55)';c.lineWidth=11;c.beginPath();LG.bolts.forEach(bl=>bl.pts.forEach((q,n)=>n?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1])));c.stroke();
+   c.strokeStyle='rgba(120,180,255,.5)';c.lineWidth=7;c.beginPath();LG.ring.forEach(r=>r.forEach((q,n)=>n?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1])));c.stroke();LG.dirty=0}
+  cx.save();cx.globalCompositeOperation='lighter';cx.globalAlpha=al;cx.drawImage(LGc,g.x-S,g.y-S,S*2,S*2);
+  cx.lineJoin='round';cx.lineCap='round';cx.strokeStyle='rgba(235,247,255,.95)';cx.lineWidth=2.2;cx.beginPath();LG.bolts.forEach(bl=>bl.pts.forEach((q,n)=>n?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1])));cx.stroke();
+  cx.strokeStyle='rgba(170,220,255,.8)';cx.lineWidth=1.5;cx.beginPath();LG.ring.forEach(r=>r.forEach((q,n)=>n?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1])));cx.stroke();cx.restore()}
+ if(SPK.length){cx.save();cx.globalCompositeOperation='lighter';cx.lineCap='round';cx.strokeStyle='rgba(190,225,255,.9)';cx.lineWidth=2;cx.beginPath();SPK.forEach(p=>{cx.moveTo(p.x,p.y);cx.lineTo(p.x-p.vx*.035,p.y-p.vy*.035)});cx.stroke();cx.fillStyle='#fff';SPK.forEach(p=>{if(p.l>.15)cx.fillRect(p.x-1,p.y-1,2,2)});cx.restore()}
+ // objetos, efectos de recogida y escudo (sobre el primer plano)
+ ITEMS.forEach(it=>{if(it.taken)return;const im=HUDI[it.type==='ammo'?'bolt':it.type];if(!im||!im.complete||!im.naturalWidth)return;const bob=Math.sin(P.t*3+it.ph)*4,h=36,w=im.naturalWidth/im.naturalHeight*h,y=gY(it.x)-34-bob,pulse=.5+.25*Math.sin(P.t*4+it.ph);
+  cx.save();cx.globalCompositeOperation='lighter';cx.globalAlpha=pulse;cx.drawImage(it.type==='medkit'?TEX_FLY:TEX_BLUE,it.x-36,y-36,72,72);cx.restore();cx.drawImage(im,it.x-w/2,y-h/2,w,h)});
+ if(FXP.length){cx.save();cx.globalCompositeOperation='lighter';FXP.forEach(p=>{cx.fillStyle='rgba('+p.c+','+Math.min(1,p.l*2)+')';cx.fillRect(p.x-2,p.y-2,4,4)});cx.restore()}
+ if((P.shield||0)>0){if(!BUBc)BUBc=mkBubble();const a=P.shield<2?.5+.5*Math.sin(P.t*20):1;cx.save();cx.globalCompositeOperation='lighter';cx.globalAlpha=Math.min(1,a*(.85+.15*Math.sin(P.t*6))+((P.shT||0)>0?.4:0));cx.drawImage(BUBc,P.x-52,P.y-142,104,156);cx.restore()}
  // niebla baja que se desplaza
  cx.globalAlpha=.13;for(let i=0;i<7;i++){const fx=((i*210+T*(5+i%3*3))%(GW+420))-210,fy=gY(fx)+8-(i%3)*10;cx.drawImage(TEX_FOG,fx-150,fy-70,300,140)}
  // rayos de luz, luz de plasma y luciérnagas (aditivos)
@@ -336,7 +461,9 @@ function draw(){
  for(let i=0;i<Math.ceil(GW/300);i++){const rx=140+i*300+Math.sin(T*.25+i*2)*40;cx.globalAlpha=Math.max(0,.045+.03*Math.sin(T*.4+i*1.7));cx.drawImage(TEX_RAY,rx-110,0)}
  {const L=(x,y,r,a)=>{cx.globalAlpha=Math.min(1,a);cx.drawImage(TEX_BLUE,x-r,y-r,r*2,r*2)};
   BU.forEach(b=>L(b.x,b.y,52,.30));
-  GR.forEach(g=>{const pz=1+.12*Math.sin(T*30);L(g.x-g.vx*.02,g.y-g.vy*.02,40*pz,.5);L(g.x,g.y,52*pz,.9);cx.globalAlpha=1;cx.fillStyle='#eaf8ff';cx.beginPath();cx.arc(g.x,g.y,6*pz,0,7);cx.fill()});
+  GR.forEach(g=>{const pz=1+.14*Math.sin(T*30);L(g.x-g.vx*.03,g.y-g.vy*.03,70*pz,.55);L(g.x,g.y,96*pz,.95);cx.globalAlpha=1;cx.lineCap='round';const bx=g.x-g.vx*.2,by=g.y-g.vy*.2;      // bola grande con haz de luz potente
+   cx.strokeStyle='rgba(60,130,255,.35)';cx.lineWidth=22*pz;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(bx,by);cx.stroke();cx.strokeStyle='rgba(140,205,255,.7)';cx.lineWidth=11*pz;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(bx,by);cx.stroke();cx.strokeStyle='#fff';cx.lineWidth=4;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(g.x-g.vx*.12,g.y-g.vy*.12);cx.stroke();
+   cx.fillStyle='#fff';cx.beginPath();cx.arc(g.x,g.y,9*pz,0,7);cx.fill()});
   EXP.forEach(x=>{const p=1-x.l/x.L;L(x.x,x.y,40+p*95,(1-p)*.9);cx.globalAlpha=(1-p)*.8;cx.strokeStyle='#9fdcff';cx.lineWidth=3*(1-p)+.5;cx.beginPath();cx.arc(x.x,x.y,10+p*80,0,7);cx.stroke()});PART.forEach(p=>{if(p.v===1)L(p.x,p.y,48,.7*(p.l/p.L))});if((P.glow||0)>.03)L(P.x,P.y-42,160,.28*P.glow)}
  FLY.forEach(f=>{const px=f.x+Math.sin(T*f.sp+f.ph)*22,py=f.y+Math.cos(T*f.sp*.8+f.ph)*14,al=.35+.5*Math.sin(T*1.6+f.ph);if(al<=0)return;cx.globalAlpha=Math.min(1,al);cx.drawImage(TEX_FLY,px-f.r*5,py-f.r*5,f.r*10,f.r*10)});
  cx.globalCompositeOperation='source-over';cx.globalAlpha=1;
@@ -344,16 +471,59 @@ function draw(){
  // viñeta y HUD
  cx.setTransform(1,0,0,1,0,0);cx.drawImage(VIG,0,0);
  cx.setTransform(kk,0,0,kk,0,0);
- cx.fillStyle='#fff';cx.font='bold 13px Arial';cx.textAlign='left';
- cx.fillText('SOLDADOS DE ALTA ELITE · '+VERSION,10,18);
- for(let i=0;i<5;i++){cx.fillStyle=i<P.hp?'#e04040':'#444';cx.fillRect(10+i*18,26,14,12)}
- cx.fillStyle='#ddd';cx.font='11px Arial';cx.fillText('Estado: '+P.state+(P.canDash?'  ⚡ impulso listo':'  ⚡ recargando (toca suelo)'),10,54);
- if(!document.body.classList.contains('touch')){cx.fillText('◀▶/A D mover · ▼/S agachar (+fuego = plasma cargado) · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · R reiniciar · M sonido',10,GH-8)}
+ drawHUD();
+ cx.fillStyle='#ddd';cx.font='11px Arial';cx.textAlign='left';
+ if(!document.body.classList.contains('touch')&&P.t<14){cx.globalAlpha=Math.min(.9,(14-P.t)/3);cx.fillText('◀▶/A D mover · ▼/S agachar (+fuego = plasma cargado) · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · R reiniciar · M sonido · G carga',10,GH-8);cx.globalAlpha=1}
  if(P.x>4130){const a=Math.min(1,(P.x-4130)/130);cx.globalAlpha=a;cx.fillStyle='#000';cx.fillRect(0,0,VW,GH);cx.fillStyle='#e8f0e0';cx.font='bold 22px Arial';cx.textAlign='center';cx.fillText('CONTINUARÁ…',VW/2,GH/2);cx.font='13px Arial';cx.fillText('La cueva guarda el siguiente nivel',VW/2,GH/2+24);cx.globalAlpha=1}
  if(P.dead){cx.fillStyle='#000a';cx.fillRect(0,130,VW,80);cx.fillStyle='#fff';cx.font='bold 26px Arial';cx.textAlign='center';cx.fillText('MISIÓN FALLIDA',VW/2,172);cx.font='13px Arial';cx.fillText('Pulsa R o salta para reiniciar',VW/2,196)}
 }
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+const hi=(n,x,y,h)=>{const im=HUDI[n];if(!im||!im.complete||!im.naturalWidth)return 0;const w=im.naturalWidth/im.naturalHeight*h;cx.drawImage(im,x,y,w,h);return w};
+const HCW='rgba(255,255,255,.9)',HCR='#ff4a3d';
+function skew(x,y,w,h,k){cx.beginPath();cx.moveTo(x+k,y);cx.lineTo(x+w+k,y);cx.lineTo(x+w,y+h);cx.lineTo(x,y+h);cx.closePath()}   // paralelogramo (segmentos inclinados)
+function drawRifle(x,y,sc){cx.save();cx.translate(x,y);cx.scale(sc,sc);cx.beginPath();     // silueta propia de un fusil de plasma
+ cx.moveTo(0,10);cx.lineTo(14,8);cx.lineTo(24,13);cx.lineTo(24,20);cx.lineTo(10,26);cx.lineTo(0,22);cx.closePath();
+ cx.moveTo(24,9);cx.lineTo(66,9);cx.lineTo(70,6);cx.lineTo(92,6);cx.lineTo(92,10);cx.lineTo(120,11);cx.lineTo(120,15);cx.lineTo(92,16);cx.lineTo(92,21);cx.lineTo(24,21);cx.closePath();
+ cx.moveTo(44,21);cx.lineTo(56,21);cx.lineTo(54,38);cx.lineTo(42,38);cx.closePath();cx.moveTo(30,21);cx.lineTo(38,21);cx.lineTo(36,34);cx.lineTo(29,34);cx.closePath();cx.moveTo(76,6);cx.lineTo(76,2);cx.lineTo(86,2);cx.lineTo(86,6);cx.closePath();
+ cx.fill();cx.fillStyle='rgba(0,0,0,.55)';cx.fillRect(96,12,6,2.5);cx.restore()}
+function drawHUD(){
+ const ls=(v)=>{try{cx.letterSpacing=v}catch(e){}};
+ cx.save();cx.textAlign='left';cx.lineJoin='miter';
+ // ---- VIDA: 5 segmentos; se pone roja cuando queda el 20 % (1 de 5) ----
+ const low=P.hp<=1&&!P.dead,col=low?HCR:HCW,pul=low?.6+.4*Math.sin(P.t*8):1;
+ cx.globalAlpha=pul;cx.fillStyle=col;cx.strokeStyle=col;cx.font='bold 9px Arial';ls('2px');cx.fillText('VIDA',14,19);ls('0px');
+ cx.lineWidth=1;cx.beginPath();cx.moveTo(14,23);cx.lineTo(14,22.5);for(let k=0;k<=5;k++){cx.moveTo(18+k*30,22);cx.lineTo(18+k*30,25)}cx.stroke();     // marcas
+ for(let k=0;k<5;k++){const x=18+k*30;if(k<P.hp){cx.shadowColor=(P.healT||0)>0?'rgba(120,255,160,.9)':'transparent';cx.shadowBlur=(P.healT||0)>0?10:0;skew(x,26,26,8,5);cx.fill();cx.shadowBlur=0}else{skew(x+.5,26.5,25,7,5);cx.globalAlpha=pul*.55;cx.stroke();cx.globalAlpha=pul}}
+ cx.globalAlpha=1;
+ // ---- PLASMA CARGADO: 10 segmentos ----
+ const rl=P.reload>0,emp=P.plasma<=0&&P.reserve<=0;
+ cx.fillStyle=HCW;cx.strokeStyle=HCW;cx.font='bold 9px Arial';ls('2px');cx.globalAlpha=emp?.5+.5*Math.sin(P.t*10):1;cx.fillText(rl?'RECARGA':(emp?'SIN CARGA':'PLASMA'),14,50);ls('0px');cx.globalAlpha=1;
+ cx.beginPath();cx.arc(70+ (rl?14:0)+(emp?18:0),46,3.2,0,7);cx.stroke();                       // pequeño anillo-indicador
+ const lit=rl?Math.floor((1-P.reload/.9)*10):P.plasma;
+ for(let k=0;k<10;k++){const x=18+k*14.5;if(k<lit){skew(x,54,11,7,4);cx.fill()}else{skew(x+.5,54.5,10,6,4);cx.globalAlpha=.5;cx.stroke();cx.globalAlpha=1}}
+ // ---- ARMA y munición (abajo, a la derecha; en móvil, centrada para no quedar bajo los botones) ----
+ const touch=document.body.classList.contains('touch'),ax=touch?VW/2+70:VW-14,ay=GH-88;
+ cx.textAlign='right';cx.fillStyle=HCW;cx.strokeStyle=HCW;
+ drawRifle(ax-122,ay,1);
+ cx.font='bold 26px Arial';const tx=ax-0;const q=String(P.plasma),r=String(P.reserve);
+ cx.fillStyle=(P.plasma<=0)?HCR:HCW;cx.fillText(q,ax-52,ay+68);cx.fillStyle=HCW;cx.font='bold 14px Arial';cx.fillText('|',ax-40,ay+67);cx.fillText(r,ax-14,ay+68);
+ cx.lineWidth=1;cx.beginPath();cx.moveTo(ax-130,ay+74);cx.lineTo(ax,ay+74);cx.moveTo(ax-130,ay+70);cx.lineTo(ax-130,ay+74);cx.moveTo(ax,ay+70);cx.lineTo(ax,ay+74);cx.stroke();
+ if((P.ammoT||0)>0){cx.globalAlpha=Math.min(1,P.ammoT*2);cx.fillStyle='rgba(150,215,255,1)';cx.font='bold 11px Arial';cx.fillText('+10',ax-14,ay-2)}
+ cx.restore();
+ // ---- jefe: nombre y barra arriba al centro (también roja al 20 %) ----
+ if(BO&&BOSS.on&&BOSS.mode!=='dead'){const b=BOSS,bw=Math.min(240,VW-380),bx=(VW-bw)/2+40,by=24,red=b.hp<=b.hpmax*.2,c=red?HCR:HCW;
+  cx.save();cx.fillStyle=c;cx.strokeStyle=c;cx.textAlign='center';cx.font='bold 12px Arial';ls('3px');cx.fillText('FREAKENSTEIN',bx+bw/2,18);ls('0px');
+  cx.lineWidth=1;cx.beginPath();cx.moveTo(bx,by-3);cx.lineTo(bx,by+13);cx.moveTo(bx+bw,by-3);cx.lineTo(bx+bw,by+13);for(let k=1;k<10;k++){cx.moveTo(bx+bw*k/10,by-3);cx.lineTo(bx+bw*k/10,by)}cx.stroke();
+  cx.globalAlpha=.4;cx.fillRect(bx+1,by+2,Math.max(0,bw*Math.max(0,b.hs)/b.hpmax)-2,8);cx.globalAlpha=1;                 // trozo de vida recién perdida
+  cx.fillRect(bx+1,by+2,Math.max(0,bw*Math.max(0,b.hp)/b.hpmax)-2,8);cx.restore()}
+ cx.restore();
+ cx.fillStyle='rgba(255,255,255,.28)';cx.font='9px Arial';cx.textAlign='left';cx.fillText(VERSION,10,GH-4);
+ if(/dbg/.test(location.search)){cx.fillStyle='#ddd';cx.font='11px Arial';cx.fillText('Estado: '+P.state,10,GH-34)}}
 let last=performance.now(),started=false;
-function loop(t){const dt=Math.min(.033,(t-last)/1000);last=t;
+let qAcc=0,qN=0;
+function loop(t){const raw=(t-last)/1000,dt=Math.min(.033,raw);last=t;
+ if(raw<.5&&document.hasFocus()){qAcc+=raw;qN++;if(qN>=150){if(qAcc/qN>.028&&RS>1.25){RS=Math.max(1.25,RS-.25);BGc=null;FGc=null;fit()}qAcc=0;qN=0}}   // calidad automática: si va a menos de ~36 fps, baja la resolución interna
+
  if(P.dead&&(K.j||K.rs)&&P.t>0)if(P.deadT===undefined||P.t-P.deadT>1){respawn();P.deadT=undefined}
  if(P.dead&&P.deadT===undefined)P.deadT=P.t;
  step(dt);draw();requestAnimationFrame(loop)}
