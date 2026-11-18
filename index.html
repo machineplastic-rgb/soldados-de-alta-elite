@@ -8,8 +8,8 @@
 html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;font-family:Arial,sans-serif}
 #c{position:fixed;left:0;top:0;width:100vw;height:100vh;height:100dvh;display:block}
 .b{z-index:3;position:fixed;border-radius:50%;background:transparent;border:0;display:none;touch-action:none}
-.b svg,#knob svg{width:100%;height:100%;display:block;fill:none;stroke:rgba(255,255,255,.9);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}
-.b svg .f,#knob svg .f{fill:rgba(255,255,255,.9);stroke:none}
+.b svg,#knob svg{width:100%;height:100%;display:block;fill:none;stroke:rgba(255,255,255,.7);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}
+.b svg .f,#knob svg .f{fill:rgba(255,255,255,.7);stroke:none}
 .b.on{background:rgba(255,255,255,.16)}.b.on svg{stroke:#fff}
 body.touch .b{display:block}
 #zone{position:fixed;left:0;bottom:0;width:46vw;height:80vh;display:none;touch-action:none;z-index:1}
@@ -27,7 +27,6 @@ body.touch #knob{display:block}
 <div id="zone"></div><div id="knob" class="idle"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" stroke-dasharray="62 10" transform="rotate(-80 50 50)"/><circle cx="50" cy="50" r="13"/><circle class="f" cx="50" cy="50" r="3.5"/><path d="M50 22V30M50 70V78M22 50H30M70 50H78"/></svg></div>
 <div class="b" id="bJ" style="right:calc(24px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="86 11" transform="rotate(-100 50 50)"/><path d="M30 58L50 36L70 58"/><path d="M36 70H64"/></svg></div>
 <div class="b" id="bF" style="right:calc(112px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="86 11" transform="rotate(-100 50 50)"/><circle cx="50" cy="50" r="13"/><circle class="f" cx="50" cy="50" r="3.5"/><path d="M50 22V35M50 65V78M22 50H35M65 50H78"/></svg></div>
-<div class="b" id="bC" style="right:calc(200px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:76px;height:76px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="86 11" transform="rotate(-100 50 50)"/><circle class="f" cx="50" cy="50" r="9"/><circle cx="50" cy="50" r="21" stroke-dasharray="5 6"/><path d="M50 18V26M50 74V82M18 50H26M74 50H82"/></svg></div>
 <div class="b" id="bT" style="right:calc(68px + env(safe-area-inset-right));bottom:calc(118px + env(safe-area-inset-bottom));width:76px;height:76px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke-dasharray="86 11" transform="rotate(-100 50 50)"/><path d="M57 20L36 55H51L43 80L66 44H51Z"/></svg></div>
 <script src="spr.js"></script>
 <script src="local/ocula.js"></script>
@@ -82,13 +81,13 @@ function scream(){tone(190,55,.6,'sawtooth',.28);tone(95,45,.6,'square',.12)}
  if('ontouchstart' in window)addEventListener('pointerdown',()=>{if(!document.fullscreenElement&&!document.webkitFullscreenElement)tog()},{once:true})})();
 document.getElementById('mute').onclick=e=>{muted=!muted;e.target.textContent=muted?'🔇':'🔊';if(master)master.gain.value=muted?0:.5;if(muted&&window.speechSynthesis)speechSynthesis.cancel()};
 // ---------- entrada ----------
-const K={};const keymap={g:'g',ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowDown:'d',s:'d',ArrowUp:'u',w:'u',' ':'j',z:'j',k:'j',x:'f',j:'f',c:'t',l:'t',Shift:'t',h:'h',m:'m',r:'rs'};
+const K={};const keymap={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowDown:'d',s:'d',ArrowUp:'u',w:'u',' ':'j',z:'j',k:'j',x:'f',j:'f',c:'t',l:'t',Shift:'t',h:'h',m:'m',r:'rs'};
 const pressed={};
 addEventListener('keydown',e=>{audio();const k=keymap[e.key.length>1?e.key:e.key.toLowerCase()];if(k){K[k]=1;if(!pressed[k]){pressed[k]=1;edge(k)}e.preventDefault()}});
 addEventListener('keyup',e=>{const k=keymap[e.key.length>1?e.key:e.key.toLowerCase()];if(k){K[k]=0;pressed[k]=0}});
-let jumpQ=0,dashQ=0,gQ=0;
-function edge(k){if(k==='g')gQ=.12;if(k==='j')jumpQ=.12;if(k==='t')dashQ=.12;if(k==='h')hurtMe();if(k==='v'&&!P.dead){P.win=1.1;SFX.win();VOZ.victoria()}if(k==='rs')respawn()}
-const touchMap={bJ:'j',bF:'f',bT:'t',bC:'g'};
+let jumpQ=0,dashQ=0;
+function edge(k){if(k==='j')jumpQ=.12;if(k==='t')dashQ=.12;if(k==='h')hurtMe();if(k==='v'&&!P.dead){P.win=1.1;SFX.win();VOZ.victoria()}if(k==='rs')respawn()}
+const touchMap={bJ:'j',bF:'f',bT:'t'};
 if('ontouchstart' in window||navigator.maxTouchPoints>0||/touch/.test(location.search))document.body.classList.add('touch');
 // joystick virtual flotante (un solo círculo): izquierda/derecha = mover, arriba = apuntar arriba, abajo = agacharse
 (function(){const zn=document.getElementById('zone'),kn=document.getElementById('knob');let pid=null,x0=0,y0=0;const R=60;
@@ -249,7 +248,7 @@ itemsReset();
 const AIMV=[[1,0],[.707,-.707],[.25,-.97],[.707,.707],[.3,.95]];
 const SPEED=150*PS,G=1000*PS,JV=-430*PS,DASHV=380*PS,DASHT=.22,HW=9*PS;   // física proporcional al tamaño
 function step(dt){
- P.glow=Math.max(0,(P.glow||0)-dt*5.5);P.t+=dt;jumpQ=Math.max(0,jumpQ-dt);gQ=Math.max(0,gQ-dt);dashQ=Math.max(0,dashQ-dt);P.inv=Math.max(0,P.inv-dt);P.hurt=Math.max(0,P.hurt-dt);P.fire=Math.max(0,P.fire-dt);P.brake=Math.max(0,(P.brake||0)-dt);P.flash=Math.max(0,P.flash-dt);P.dashCd=Math.max(0,P.dashCd-dt);
+ P.glow=Math.max(0,(P.glow||0)-dt*5.5);P.t+=dt;jumpQ=Math.max(0,jumpQ-dt);dashQ=Math.max(0,dashQ-dt);P.inv=Math.max(0,P.inv-dt);P.hurt=Math.max(0,P.hurt-dt);P.fire=Math.max(0,P.fire-dt);P.brake=Math.max(0,(P.brake||0)-dt);P.flash=Math.max(0,P.flash-dt);P.dashCd=Math.max(0,P.dashCd-dt);
  if(P.win>0&&!P.dead){P.win-=dt;P.vx=0;if(K.l||K.r||K.j||K.f||K.t||K.d)P.win=0;if(P.win<0)P.win=0}
  const lock=P.dead||P.hurt>0||P.win>0;
  const mv=(K.r?1:0)-(K.l?1:0);
@@ -266,12 +265,12 @@ function step(dt){
   // impulso
   if(dashQ>0&&P.dashCd<=0&&P.canDash){P.dash=DASHT;P.dashT=0;P.canDash=0;P.dashCd=.45;P.vy=0;dashQ=0;SFX.dash();VOZ.dash()}
   // disparo
-  if(K.f&&P.fire<=0){shoot()}
-  else if(gQ>0&&P.fire<=0){gQ=0;shoot(true)}      // botón CARGA (táctil) o tecla G: plasma cargado sin agacharse
+  if(K.f&&P.fire<=0&&!P.crouch){shoot()}      // de pie: disparo normal; agachado: se carga el plasma (ver chargeStep)
  }
  if(P.dash>0){P.dash-=dt;P.dashT+=dt;P.vx=P.dir*DASHV;P.vy=0;if(P.dash<=0)P.brake=.2}
  else P.vy+=G*dt;
  if(P.vy>700)P.vy=700;
+ chargeStep(dt,lock);
  // mover X
  P.x+=P.vx*dt;P.x=Math.max(14*PS,Math.min(GEND,P.x));bossBlock();
  // mover Y + suelo / plataformas
@@ -326,17 +325,34 @@ function explode(x,y){
   if(enOpen(e)){e.hp-=3;e.hit=.12;if(e.hp<=0){e.mode='dead';e.mt=0;SFX.die()}else{e.mode='hurt';e.mt=0}}else tone(1700,900,.06,'square',.12)});
  if(bossAlive()){const b=BOSS,dx=Math.max(0,Math.abs(x-b.x)-(x<b.x?BHL:BHR));if(dx<R&&y>b.y-BO.h-R&&y<b.y+R)hurtBoss(3)}
  TARGETS.forEach(t=>{if(t.hp>0&&Math.hypot(t.x-x,t.y+16-y)<R+14){t.hp-=2;t.hit=.12;if(t.hp<=0)tone(200,60,.3,'square',.2)}})}
+// ---------- plasma cargado: agachado + mantener fuego 2 s (luz y sonido de carga); al soltar sale la bola ----------
+const CHG_T=2;let CHs=null;
+function chgSndStart(){if(!AC||CHs)return;try{const o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter();o.type='sawtooth';o2.type='sine';lp.type='lowpass';lp.frequency.value=600;g.gain.value=0;o.connect(lp);o2.connect(lp);lp.connect(g);g.connect(master);o.start();o2.start();CHs={o,o2,g,lp}}catch(e){CHs=null}}
+function chgSndSet(q){if(!CHs)return;const t=AC.currentTime;CHs.o.frequency.setTargetAtTime(70+q*520,t,.05);CHs.o2.frequency.setTargetAtTime(140+q*1500,t,.05);CHs.lp.frequency.setTargetAtTime(500+q*2500,t,.05);CHs.g.gain.setTargetAtTime(.1+.18*q,t,.05)}
+function chgSndStop(){if(!CHs)return;const t=AC.currentTime,c=CHs;CHs=null;try{c.g.gain.setTargetAtTime(0,t,.04);c.o.stop(t+.25);c.o2.stop(t+.25)}catch(e){}}
+function muzzle(){let fr=frame();if(P.aim>0&&P.state!=='runu')fr=P.crouch?'a1_6':['a1_0','a1_1','a1_2','a1_3','a1_4'][P.aim];else if(P.crouch)fr='a1_5';
+ const m=SPR[fr],kz=SC*(m.sc||1)/(m.z||1),mx=P.x+P.dir*(m.tx-m.cx)*kz,my=P.y-(m.by-m.ty)*kz;let ax=1,ay=0;if(P.aim>0&&m.ax!==undefined){ax=m.ax;ay=m.ay}return {mx,my,ax,ay}}
+function chargeStep(dt,lock){
+ const can=P.crouch&&!lock&&!P.dead&&P.plasma>0&&P.reload<=0;
+ if(K.f&&can){
+  if(!P.chgOn){P.chgOn=1;P.chg=0;P.chgReady=0;chgSndStart()}
+  P.chg=Math.min(CHG_T,P.chg+dt);const q=P.chg/CHG_T;chgSndSet(q);P.glow=Math.max(P.glow||0,.25+.65*q);
+  if(P.chg>=CHG_T&&!P.chgReady){P.chgReady=1;tone(880,880,.1,'square',.12);tone(1320,1320,.22,'sine',.16,.09)}      // listo para soltar
+ }else if(P.chgOn){
+  chgSndStop();
+  if(P.chgReady&&P.crouch&&!lock&&!K.f&&!P.dead){const z=muzzle();P.plasma--;P.fire=.6;chargedShot(z.mx,z.my,z.ax,z.ay);PART.push({x:z.mx,y:z.my,l:.14,L:.14,v:1})}
+  else if(!P.chgReady)tone(300,90,.14,'sawtooth',.12);      // soltado antes de tiempo: se pierde la carga, sin gastar munición
+  P.chgOn=0;P.chg=0;P.chgReady=0}
+ else if(K.f&&P.crouch&&!lock&&!P.dead&&(P.plasma<=0||P.reload>0)&&!P.clickT){P.clickT=.4;tone(150,90,.09,'square',.14)}
+ P.clickT=Math.max(0,(P.clickT||0)-dt)}
 function chargedShot(mx,my,ax,ay){   // plasma cargado: sale recto de la punta del cañón, grande y lento, explota al tocar algo
- GR.push({x:mx,y:my,vx:ax*P.dir*430,vy:ay*430,l:1.3,b:0,f:1});tone(90,45,.5,'sawtooth',.4);tone(55,28,.6,'sine',.55);tone(240,110,.28,'square',.12);noise(.32,.35,160);SHK=Math.max(SHK,3)}      // más fuerte y más grave
-function shoot(forceC){
- P.fire=(P.crouch||forceC)?.6:.16;P.flash=.09;P.shotN=(P.shotN||0)+1;SFX.shot();VOZ.ataque();P.glow=1;
+ GR.push({x:mx,y:my,x0:mx,y0:my,vx:ax*P.dir*430,vy:ay*430,l:1.3,b:0,f:1});tone(90,45,.5,'sawtooth',.4);tone(55,28,.6,'sine',.55);tone(240,110,.28,'square',.12);noise(.32,.35,160);SHK=Math.max(SHK,3)}      // más fuerte y más grave
+function shoot(){
+ P.fire=.16;P.flash=.09;P.shotN=(P.shotN||0)+1;SFX.shot();VOZ.ataque();P.glow=1;
  // fotograma que se mostrará al apuntar: de él salen la punta del cañón y el ángulo real del fusil
  let fr=frame();if(P.aim>0&&P.state!=='runu')fr=P.crouch?'a1_6':['a1_0','a1_1','a1_2','a1_3','a1_4'][P.aim];else if(P.crouch)fr='a1_5';
  const m=SPR[fr],kz=SC*(m.sc||1)/(m.z||1),mx=P.x+P.dir*(m.tx-m.cx)*kz,my=P.y-(m.by-m.ty)*kz;
  let ax=1,ay=0;if(P.aim>0&&m.ax!==undefined){ax=m.ax;ay=m.ay}   // solo al apuntar se usa el ángulo medido del fusil; en carrera, horizontal
- if(P.crouch||forceC){   // plasma cargado: gasta una carga; si no queda, no sale (se recarga solo de la reserva)
-  if(P.plasma<=0||P.reload>0){P.fire=.35;tone(150,90,.09,'square',.14);return}
-  P.plasma--;chargedShot(mx,my,ax,ay);PART.push({x:mx,y:my,l:.14,L:.14,v:1});return}
  BU.push({x:mx,y:my,vx:ax*P.dir*700,vy:ay*700,l:1.0,d:P.dir});
  PART.push({x:mx,y:my,l:.1,L:.1,v:1})
 }
@@ -454,6 +470,12 @@ function draw(){
   cx.save();cx.globalCompositeOperation='lighter';cx.globalAlpha=pulse;cx.drawImage(it.type==='medkit'?TEX_FLY:TEX_BLUE,it.x-36,y-36,72,72);cx.restore();cx.drawImage(im,it.x-w/2,y-h/2,w,h)});
  if(FXP.length){cx.save();cx.globalCompositeOperation='lighter';FXP.forEach(p=>{cx.fillStyle='rgba('+p.c+','+Math.min(1,p.l*2)+')';cx.fillRect(p.x-2,p.y-2,4,4)});cx.restore()}
  if((P.shield||0)>0){if(!BUBc)BUBc=mkBubble();const a=P.shield<2?.5+.5*Math.sin(P.t*20):1;cx.save();cx.globalCompositeOperation='lighter';cx.globalAlpha=Math.min(1,a*(.85+.15*Math.sin(P.t*6))+((P.shT||0)>0?.4:0));cx.drawImage(BUBc,P.x-52,P.y-142,104,156);cx.restore()}
+ // luz de carga del plasma en la boca del arma
+ if(P.chgOn&&P.chg>.04){const z=muzzle(),q=Math.min(1,P.chg/CHG_T),T2=performance.now()/1000;cx.save();cx.globalCompositeOperation='lighter';
+  const r=16+70*q;cx.globalAlpha=.3+.6*q;cx.drawImage(TEX_BLUE,z.mx-r,z.my-r,r*2,r*2);cx.globalAlpha=1;cx.fillStyle='#fff';cx.beginPath();cx.arc(z.mx,z.my,2+7*q,0,7);cx.fill();
+  cx.strokeStyle='rgba(150,210,255,.85)';cx.lineWidth=1.6;for(let k=0;k<5;k++){const a=T2*9+k*1.2566,d=(1-((T2*1.5+k*.2)%1))*(30+40*q)+6;cx.beginPath();cx.arc(z.mx+Math.cos(a)*d,z.my+Math.sin(a)*d,1.4,0,7);cx.stroke()}      // chispas que se acercan
+  if(P.chgReady){cx.globalAlpha=.6+.4*Math.sin(T2*24);cx.lineWidth=2.5;cx.beginPath();cx.arc(z.mx,z.my,26+4*Math.sin(T2*12),0,7);cx.stroke()}
+  cx.restore()}
  // niebla baja que se desplaza
  cx.globalAlpha=.13;for(let i=0;i<7;i++){const fx=((i*210+T*(5+i%3*3))%(GW+420))-210,fy=gY(fx)+8-(i%3)*10;cx.drawImage(TEX_FOG,fx-150,fy-70,300,140)}
  // rayos de luz, luz de plasma y luciérnagas (aditivos)
@@ -461,8 +483,8 @@ function draw(){
  for(let i=0;i<Math.ceil(GW/300);i++){const rx=140+i*300+Math.sin(T*.25+i*2)*40;cx.globalAlpha=Math.max(0,.045+.03*Math.sin(T*.4+i*1.7));cx.drawImage(TEX_RAY,rx-110,0)}
  {const L=(x,y,r,a)=>{cx.globalAlpha=Math.min(1,a);cx.drawImage(TEX_BLUE,x-r,y-r,r*2,r*2)};
   BU.forEach(b=>L(b.x,b.y,52,.30));
-  GR.forEach(g=>{const pz=1+.14*Math.sin(T*30);L(g.x-g.vx*.03,g.y-g.vy*.03,70*pz,.55);L(g.x,g.y,96*pz,.95);cx.globalAlpha=1;cx.lineCap='round';const bx=g.x-g.vx*.2,by=g.y-g.vy*.2;      // bola grande con haz de luz potente
-   cx.strokeStyle='rgba(60,130,255,.35)';cx.lineWidth=22*pz;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(bx,by);cx.stroke();cx.strokeStyle='rgba(140,205,255,.7)';cx.lineWidth=11*pz;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(bx,by);cx.stroke();cx.strokeStyle='#fff';cx.lineWidth=4;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(g.x-g.vx*.12,g.y-g.vy*.12);cx.stroke();
+  GR.forEach(g=>{const pz=1+.14*Math.sin(T*30);L(g.x-g.vx*.03,g.y-g.vy*.03,70*pz,.55);L(g.x,g.y,96*pz,.95);cx.globalAlpha=1;cx.lineCap='round';const tl=Math.min(.2,Math.hypot(g.x-(g.x0||g.x),g.y-(g.y0||g.y))/430),bx=g.x-g.vx*tl,by=g.y-g.vy*tl;      // el haz solo se alarga desde la boca del arma      // bola grande con haz de luz potente
+   cx.strokeStyle='rgba(60,130,255,.35)';cx.lineWidth=22*pz;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(bx,by);cx.stroke();cx.strokeStyle='rgba(140,205,255,.7)';cx.lineWidth=11*pz;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(bx,by);cx.stroke();cx.strokeStyle='#fff';cx.lineWidth=4;cx.beginPath();cx.moveTo(g.x,g.y);cx.lineTo(g.x-g.vx*Math.min(.12,tl),g.y-g.vy*Math.min(.12,tl));cx.stroke();
    cx.fillStyle='#fff';cx.beginPath();cx.arc(g.x,g.y,9*pz,0,7);cx.fill()});
   EXP.forEach(x=>{const p=1-x.l/x.L;L(x.x,x.y,40+p*95,(1-p)*.9);cx.globalAlpha=(1-p)*.8;cx.strokeStyle='#9fdcff';cx.lineWidth=3*(1-p)+.5;cx.beginPath();cx.arc(x.x,x.y,10+p*80,0,7);cx.stroke()});PART.forEach(p=>{if(p.v===1)L(p.x,p.y,48,.7*(p.l/p.L))});if((P.glow||0)>.03)L(P.x,P.y-42,160,.28*P.glow)}
  FLY.forEach(f=>{const px=f.x+Math.sin(T*f.sp+f.ph)*22,py=f.y+Math.cos(T*f.sp*.8+f.ph)*14,al=.35+.5*Math.sin(T*1.6+f.ph);if(al<=0)return;cx.globalAlpha=Math.min(1,al);cx.drawImage(TEX_FLY,px-f.r*5,py-f.r*5,f.r*10,f.r*10)});
@@ -473,13 +495,13 @@ function draw(){
  cx.setTransform(kk,0,0,kk,0,0);
  drawHUD();
  cx.fillStyle='#ddd';cx.font='11px Arial';cx.textAlign='left';
- if(!document.body.classList.contains('touch')&&P.t<14){cx.globalAlpha=Math.min(.9,(14-P.t)/3);cx.fillText('◀▶/A D mover · ▼/S agachar (+fuego = plasma cargado) · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · R reiniciar · M sonido · G carga',10,GH-8);cx.globalAlpha=1}
+ if(!document.body.classList.contains('touch')&&P.t<14){cx.globalAlpha=Math.min(.9,(14-P.t)/3);cx.fillText('◀▶/A D mover · ▼/S agachar + mantener fuego 2 s = plasma cargado · Espacio/Z salto · X/J fuego · C/Shift impulso · W/↑ apuntar arriba · ▼ en el aire abajo · H daño · R reiniciar · M sonido',10,GH-8);cx.globalAlpha=1}
  if(P.x>4130){const a=Math.min(1,(P.x-4130)/130);cx.globalAlpha=a;cx.fillStyle='#000';cx.fillRect(0,0,VW,GH);cx.fillStyle='#e8f0e0';cx.font='bold 22px Arial';cx.textAlign='center';cx.fillText('CONTINUARÁ…',VW/2,GH/2);cx.font='13px Arial';cx.fillText('La cueva guarda el siguiente nivel',VW/2,GH/2+24);cx.globalAlpha=1}
  if(P.dead){cx.fillStyle='#000a';cx.fillRect(0,130,VW,80);cx.fillStyle='#fff';cx.font='bold 26px Arial';cx.textAlign='center';cx.fillText('MISIÓN FALLIDA',VW/2,172);cx.font='13px Arial';cx.fillText('Pulsa R o salta para reiniciar',VW/2,196)}
 }
 function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
 const hi=(n,x,y,h)=>{const im=HUDI[n];if(!im||!im.complete||!im.naturalWidth)return 0;const w=im.naturalWidth/im.naturalHeight*h;cx.drawImage(im,x,y,w,h);return w};
-const HCW='rgba(255,255,255,.9)',HCR='#ff4a3d';
+const HCW='rgba(255,255,255,.72)',HCR='rgba(255,74,61,.85)';
 function skew(x,y,w,h,k){cx.beginPath();cx.moveTo(x+k,y);cx.lineTo(x+w+k,y);cx.lineTo(x+w,y+h);cx.lineTo(x,y+h);cx.closePath()}   // paralelogramo (segmentos inclinados)
 function drawRifle(x,y,sc){cx.save();cx.translate(x,y);cx.scale(sc,sc);cx.beginPath();     // silueta propia de un fusil de plasma
  cx.moveTo(0,10);cx.lineTo(14,8);cx.lineTo(24,13);cx.lineTo(24,20);cx.lineTo(10,26);cx.lineTo(0,22);cx.closePath();
@@ -501,14 +523,12 @@ function drawHUD(){
  cx.beginPath();cx.arc(70+ (rl?14:0)+(emp?18:0),46,3.2,0,7);cx.stroke();                       // pequeño anillo-indicador
  const lit=rl?Math.floor((1-P.reload/.9)*10):P.plasma;
  for(let k=0;k<10;k++){const x=18+k*14.5;if(k<lit){skew(x,54,11,7,4);cx.fill()}else{skew(x+.5,54.5,10,6,4);cx.globalAlpha=.5;cx.stroke();cx.globalAlpha=1}}
- // ---- ARMA y munición (abajo, a la derecha; en móvil, centrada para no quedar bajo los botones) ----
- const touch=document.body.classList.contains('touch'),ax=touch?VW/2+70:VW-14,ay=GH-88;
- cx.textAlign='right';cx.fillStyle=HCW;cx.strokeStyle=HCW;
- drawRifle(ax-122,ay,1);
- cx.font='bold 26px Arial';const tx=ax-0;const q=String(P.plasma),r=String(P.reserve);
- cx.fillStyle=(P.plasma<=0)?HCR:HCW;cx.fillText(q,ax-52,ay+68);cx.fillStyle=HCW;cx.font='bold 14px Arial';cx.fillText('|',ax-40,ay+67);cx.fillText(r,ax-14,ay+68);
- cx.lineWidth=1;cx.beginPath();cx.moveTo(ax-130,ay+74);cx.lineTo(ax,ay+74);cx.moveTo(ax-130,ay+70);cx.lineTo(ax-130,ay+74);cx.moveTo(ax,ay+70);cx.lineTo(ax,ay+74);cx.stroke();
- if((P.ammoT||0)>0){cx.globalAlpha=Math.min(1,P.ammoT*2);cx.fillStyle='rgba(150,215,255,1)';cx.font='bold 11px Arial';cx.fillText('+10',ax-14,ay-2)}
+ if(P.chgOn){cx.fillStyle=HCW;cx.fillRect(18,65,P.chg/CHG_T*145,1.5)}      // progreso de la carga
+ // ---- ARMA y munición: debajo del cargador de plasma, con la munición al lado ----
+ cx.textAlign='left';cx.fillStyle=HCW;cx.strokeStyle=HCW;drawRifle(14,70,.72);
+ const qs=String(P.plasma);cx.font='bold 22px Arial';cx.fillStyle=(P.plasma<=0)?HCR:HCW;cx.fillText(qs,106,92);const w1=cx.measureText(qs).width;
+ cx.fillStyle=HCW;cx.font='bold 14px Arial';cx.fillText('|',106+w1+7,90);cx.fillText(String(P.reserve),106+w1+17,91);
+ if((P.ammoT||0)>0){cx.globalAlpha=Math.min(1,P.ammoT*2);cx.fillStyle='rgba(150,215,255,1)';cx.font='bold 11px Arial';cx.fillText('+10',106,68)}
  cx.restore();
  // ---- jefe: nombre y barra arriba al centro (también roja al 20 %) ----
  if(BO&&BOSS.on&&BOSS.mode!=='dead'){const b=BOSS,bw=Math.min(240,VW-380),bx=(VW-bw)/2+40,by=24,red=b.hp<=b.hpmax*.2,c=red?HCR:HCW;
@@ -529,4 +549,7 @@ function loop(t){const raw=(t-last)/1000,dt=Math.min(.033,raw);last=t;
  step(dt);draw();requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 addEventListener('pointerdown',()=>audio(),{once:true});
+// la pantalla no se apaga sola mientras se juega (Screen Wake Lock; se vuelve a pedir al volver a la pestaña)
+let WL=null;async function wake(){try{if('wakeLock' in navigator&&!WL&&document.visibilityState==='visible'){WL=await navigator.wakeLock.request('screen');WL.addEventListener('release',()=>{WL=null})}}catch(e){WL=null}}
+addEventListener('pointerdown',wake);addEventListener('keydown',wake);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wake()});wake();
 </script></body></html>
