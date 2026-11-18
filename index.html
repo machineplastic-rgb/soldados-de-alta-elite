@@ -30,11 +30,11 @@ body.touch #knob{display:block}
 <script src="local/ocula.js"></script>
 <script src="vigia.js"></script>
 <script>
-const VERSION='demo técnica v19';
+const VERSION='demo técnica v20';
 // ---------- sprites ----------
 const NAMES=Object.keys(SPR),IMG={};let loaded=0;
 NAMES.forEach(n=>{const i=new Image();i.onload=()=>{loaded++};i.src='img/spr/'+n+'.webp';IMG[n]=i});
-const PS=1.6;                            // escala del soldado respecto al tamaño base
+const PS=2.2;                           // escala del soldado respecto al tamaño base
 const SC=56/338*PS;                      // de pie = 90 px
 // animaciones: [fotogramas], fps, bucle
 const AN={
@@ -123,6 +123,7 @@ const P={x:80,y:FLOOR,vx:0,vy:0,dir:1,on:true,crouch:0,fire:0,flash:0,dash:0,das
 const BU=[],PART=[],GHO=[],GR=[],EXP=[];let ghT=0;   // GR = granadas de plasma (disparo agachado), EXP = explosioneslet ghT=0;
 // ---------- enemigo local: Ocula (solo en casa; la carpeta local\ no se sube a git) ----------
 const OC=window.OCULA||window.VIGIA,EN=[],ENIMG={},ENIMG2={};      // en casa sale Ocula (local); en la web pública, el Vigía original
+const ENS=1.3;[window.OCULA,window.VIGIA].forEach(T=>{if(T){T.sc*=ENS;T.h*=ENS}});   // enemigos algo más grandes (v20, con PS=2.2)
 const ET=e=>(e.beige&&window.VIGIA)?window.VIGIA:OC;                    // tipo de cada enemigo: los beige siempre son el Vigía repintado
 if(OC){Object.keys(OC.fr).forEach(n=>{const i=new Image();i.src=OC.base+n+'.webp';ENIMG[n]=i});
  if(window.VIGIA)Object.keys(window.VIGIA.fr).forEach(n=>{const i=new Image();i.src='img/vigia2/'+n+'.webp';ENIMG2[n]=i});
